@@ -361,6 +361,30 @@ textarea#dlgInput{width:100%;box-sizing:border-box;font:inherit;font-family:'Cou
 .mtK div{display:flex;gap:4px;justify-content:center;margin-top:5px}.mtK button{flex:1;max-width:36px;min-height:46px;border:0;border-radius:8px;background:#e7dfcf;font-weight:800;font-size:15px;color:var(--ink);padding:0}
 .mtK button.wide{max-width:58px;flex:1.6;background:var(--ink);color:#fff}.mtK button.ok{background:#3f8f5f;color:#fff}.mtK button.mid{background:#e0a21a;color:#fff}.mtK button.no{background:#b9bcc7;color:#fff}
 #tabs{padding-bottom:env(safe-area-inset-bottom)}
+/* surprises */
+.act.surp{border-color:#e7b3c4;background:#fdf3f6;box-shadow:0 2px 0 #e7b3c4}
+.tip.warnTip{background:#fdecea;border-color:var(--door)}
+.skipBtn{align-self:flex-start;border:0;background:#1b223614;color:var(--ink2);border-radius:999px;font-weight:800;font-size:12.5px;min-height:36px;padding:4px 12px;margin-top:-30px}
+.eps{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ep{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:9px 10px;min-height:76px;color:var(--ink)}
+.ep span{font-size:22px}.ep b{font-size:13.5px;line-height:1.2}.ep i{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:700}
+.ep.new{border-color:#e7b3c4;background:#fdf3f6}.ep.lock{opacity:.55;border-style:dashed}
+#overlay.letter{background:#1b2236e6;align-items:center;justify-content:center;padding:18px;overflow-y:auto}
+.paper{background:#fbf8ef;border-radius:6px;padding:20px 18px;max-width:360px;width:100%;box-sizing:border-box;box-shadow:0 12px 40px #0008;display:flex;flex-direction:column;gap:12px;font-family:'Courier Prime','Courier New',monospace;color:var(--ink);animation:pop .3s}
+.paper h3{margin:0;color:var(--door);font-family:var(--display)}.paper p{margin:0;white-space:pre-line;line-height:1.55;font-size:15.5px}.paper .sign{text-align:right;font-style:italic}
+.paper img{width:100%;border-radius:4px}.paper audio{width:100%}
+#overlay.tapm{background:#1b2236e6;align-items:center;justify-content:center;padding:18px}
+.tapBox{display:flex;flex-direction:column;gap:12px;align-items:stretch;width:100%;max-width:340px;text-align:center;color:#fff}.tapBox p{margin:0;font-weight:800}
+.tapZone{position:relative;min-height:220px;border:0;border-radius:22px;background:linear-gradient(#cfe0f0,#f6fbff);font-size:64px;overflow:hidden;touch-action:manipulation}
+.tapZone i{display:block;font-style:normal;font-size:14px;font-weight:800;color:var(--ink)}
+.tapFx{position:absolute;bottom:20px;font-size:28px;animation:tapUp .9s ease-out forwards;pointer-events:none}
+@keyframes tapUp{to{transform:translateY(-160px);opacity:0}}
+/* import / sauvegarde */
+.titleBox .msg{color:#ffb3a8;font-size:13.5px;font-weight:700;min-height:0;margin:0;text-align:left}.titleBox .msg.ok{color:#8fe0a8}
+.prev{background:#2b3552;border:1.5px solid #4a5a86;border-radius:14px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:6px}
+.prev b{font-size:14.5px}.prev small{color:#cfd6ea;font-size:12.5px;line-height:1.35}.prev.warn{border-color:var(--gold)}
+.filebtn{display:flex;align-items:center;justify-content:center}
+.titleBox .ghost{min-height:46px}
 
 </style>
 </head>
@@ -396,11 +420,14 @@ textarea#dlgInput{width:100%;box-sizing:border-box;font:inherit;font-family:'Cou
    grand, puis meta.updatedAt en cas d'égalité.
    ===================================================================== */
 const Save = (() => {
-  const KEY = 'milife.save.v1';
-  const VERSION = 1;
+  const KEY = 'milife.save.v1';          // clé historique : ne jamais la renommer
+  const BACKUP_KEY = 'milife.save.v1.backup';
+  const CORRUPT_KEY = 'milife.save.v1.corrupt';
+  const VERSION = 2;                     // v2 : surprises quotidiennes, décor, inventaire rangé
   let remote = null;
   let memoryFallback = null;      // si localStorage est indisponible
   let lastError = null;
+  let storageOk = true;           // false si la dernière écriture locale a échoué
 
   /** Forme complète d'une partie neuve. C'est LA référence du schéma. */
   function blank() {
@@ -419,15 +446,15 @@ const Save = (() => {
       },
       pot: 0,                 // cagnotte commune (projets)
       love: 1,                // complicité
-      items: [],              // [{id, owner, day, home?, room?, x?, y?}] objets achetés ; home/room/x/y si le joueur l'a déplacé
+      items: [],              // [{id, owner, day, home?, room?, x?, y?, stored?}] ; home/room/x/y si placé à la main ; stored = rangé dans l'inventaire
       firstItem: null,        // {id, owner, day} tout premier achat (revient au final)
       outfits: { leonore: ['l_pull'], leo: ['o_chemise'] },
-      memories: [],           // [{day, icon, title, text}]
+      memories: [],           // [{day, icon, title, text, ref?}] ; ref = 'pack:<épisode>' : texte lu dans le paquet privé
       registre: [],           // [{n, day, text}] Registre des incidents de Mathys
       regNo: 212,             // dernier numéro d'incident
       flags: {},              // choix dont dépendent des scènes (wish, appart, house, specialty…)
       seen: {},               // {sceneId: jour} scènes déjà jouées
-      counters: {},           // rotation des textes, compteurs d'activités
+      counters: {},           // rotation des textes, compteurs d'activités (mots = post-its d'origine distribués)
       pets: [],               // [{kind, name, day}]
       kids: [],               // [{name, born, st, hair}]
       party: { invites: false, buffet: null, deco: false },
@@ -441,16 +468,53 @@ const Save = (() => {
       rel: {},                // liens avec les proches {id: points}
       visitor: { leonore: null, leo: null },  // le proche de passage aujourd'hui
       moodlets: [],           // [{who, t, day}] petites humeurs du jour
-      notes: [],              // [{from, text, ts, day, read}] petits mots laissés sur le frigo, écrits par les joueurs
+      notes: [],              // [{from, text, ts, day, read, auto?}] petits mots du frigo ; auto = post-it d'origine (MOTS_LEO)
       login: { day: '', streak: 0 },          // dernier jour réel de connexion, jours d'affilée
-      ended: false            // la grande soirée a eu lieu
+      ended: false,           // la grande soirée a eu lieu
+      /* v2 — surprises quotidiennes (jour réel, indépendant du calendrier du jeu) */
+      daily: {
+        lastDay: '',          // dernier jour réel (AAAA-MM-JJ, heure locale) où une surprise a été débloquée
+        unlocked: [],         // [{id, day, kind}] dans l'ordre de déblocage ; id = 'mot:<n>' ou 'ep:<id épisode>'
+        ep: {},               // {idÉpisode: {opened, read, readDay, answers:{}, items:{}, plays}}
+        anniv: {},            // {'<id>:<année>': jour réel} rappels d'anniversaire déjà montrés
+        later: ''             // jour réel où elle a choisi « plus tard »
+      },
+      /* v2 — décor */
+      decor: {
+        rooms: {},            // {'<logement>:<pièce>': {wall, floor, rug, curtain, light}}
+        variants: {},         // {idObjet: clé de variante}
+        on: {},               // états d'objets interactifs {guirlande: true}
+        shelf: {},            // {'<logement>': idObjet exposé sur l'étagère}
+        layouts: {}           // {'<logement>': {at, items:[{id, room, x, y, stored}], rooms}} dispositions des logements quittés
+      }
     };
   }
 
-  /** Complète une sauvegarde ancienne ou partielle avec les champs manquants. */
+  const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const clone = v => JSON.parse(JSON.stringify(v));
+
+  /** Contrôle de structure AVANT toute écriture. Renvoie {ok:true} ou {ok:false, error}. */
+  function validate(s) {
+    if (s === null || s === undefined) return { ok: false, error: 'Ce code ne contient aucune partie.' };
+    if (!isObj(s)) return { ok: false, error: 'Ce code ne contient pas une partie de Mi Life.' };
+    if (!isObj(s.meta)) return { ok: false, error: 'Ce code ne contient pas une partie de Mi Life (en-tête absent).' };
+    const v = s.meta.version;
+    if (typeof v !== 'number' || v < 1) return { ok: false, error: 'Version de sauvegarde inconnue.' };
+    if (v > VERSION) return { ok: false, error: `Cette partie vient d’une version plus récente du jeu (v${v}). Ouvre-la avec cette version.` };
+    if (!Number.isInteger(s.day) || s.day < 1) return { ok: false, error: 'Partie illisible : jour de jeu invalide.' };
+    if (!Number.isInteger(s.stage) || s.stage < 0 || s.stage > 3) return { ok: false, error: 'Partie illisible : logement invalide.' };
+    if (!isObj(s.chars) || !isObj(s.chars.leonore) || !isObj(s.chars.leo)) return { ok: false, error: 'Partie illisible : personnages absents.' };
+    if (typeof s.chars.leonore.money !== 'number' || typeof s.chars.leo.money !== 'number') return { ok: false, error: 'Partie illisible : soldes invalides.' };
+    for (const k of ['items', 'memories', 'notes', 'registre', 'kids', 'pets']) if (s[k] !== undefined && !Array.isArray(s[k])) return { ok: false, error: `Partie illisible : « ${k} » abîmé.` };
+    for (const k of ['flags', 'seen', 'counters']) if (s[k] !== undefined && !isObj(s[k])) return { ok: false, error: `Partie illisible : « ${k} » abîmé.` };
+    if (s.items && s.items.some(i => !isObj(i) || typeof i.id !== 'string')) return { ok: false, error: 'Partie illisible : un objet est abîmé.' };
+    return { ok: true };
+  }
+
+  /** Complète une sauvegarde ancienne ou partielle. Idempotent : migrate(migrate(s)) ≡ migrate(s). */
   function migrate(s) {
     const b = blank();
-    if (!s || typeof s !== 'object') return b;
+    if (!isObj(s)) return b;
     const fill = (dst, src) => {
       for (const k in src) {
         if (dst[k] === undefined || dst[k] === null && src[k] !== null && k !== 'firstItem' && k !== 'fete') dst[k] = src[k];
@@ -459,15 +523,33 @@ const Save = (() => {
       return dst;
     };
     const out = fill(s, b);
+    const from = out.meta.version || 1;
+    // « Gosio » → « Gosiot » (ancienne orthographe de notre enfant imaginaire)
+    const fix = t => (typeof t === 'string' ? t.replace(/Gosio(?!t)/g, 'Gosiot').replace(/GOSIO(?!T)/g, 'GOSIOT') : t);
+    out.kids.forEach(k => { k.name = fix(k.name); });
+    out.memories.forEach(m => { m.title = fix(m.title); m.text = fix(m.text); });
+    out.registre.forEach(r => { r.text = fix(r.text); });
+    // objets : on garde ids, ordre et placements ; on nettoie seulement les champs illisibles
+    out.items.forEach(i => { if (i.x != null && (typeof i.x !== 'number' || typeof i.y !== 'number')) { delete i.x; delete i.y; delete i.home; delete i.room; } });
+    if (!Array.isArray(out.daily.unlocked)) out.daily.unlocked = [];
+    if (from < 2 && !out.meta.migratedFrom) out.meta.migratedFrom = from;
     out.meta.version = VERSION;
     return out;
   }
 
   function readLocal() {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) return migrate(JSON.parse(raw));
-    } catch (e) { lastError = e; }
+    let raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) { lastError = e; }
+    if (raw) {
+      try {
+        const s = JSON.parse(raw);
+        if (validate(s).ok) return migrate(s);
+        throw new Error('sauvegarde locale invalide');
+      } catch (e) {
+        lastError = e;
+        try { if (!localStorage.getItem(CORRUPT_KEY)) localStorage.setItem(CORRUPT_KEY, raw); } catch (e2) {}
+      }
+    }
     if (memoryFallback) { try { return migrate(JSON.parse(memoryFallback)); } catch (e) {} }
     return null;
   }
@@ -478,30 +560,43 @@ const Save = (() => {
     if (remote && remote.pull) {
       try {
         const r = await remote.pull();
-        if (r && (!local || (r.meta && r.meta.rev > local.meta.rev))) local = migrate(r);
+        if (r && validate(r).ok && (!local || (r.meta && r.meta.rev > local.meta.rev))) local = migrate(r);
       } catch (e) { lastError = e; }
     }
     return local;
   }
 
-  /** Écriture. Appelée par le jeu après chaque action qui change la partie. */
+  /** Écriture. Appelée par le jeu après chaque action qui change la partie. Renvoie false si le stockage local a échoué. */
   function write(state, reason) {
     state.meta.updatedAt = Date.now();
     state.meta.rev = (state.meta.rev || 0) + 1;
     state.meta.lastReason = reason || 'auto';
     const json = JSON.stringify(state);
-    try { localStorage.setItem(KEY, json); }
-    catch (e) { lastError = e; memoryFallback = json; }
+    let ok = true;
+    try { localStorage.setItem(KEY, json); memoryFallback = null; }
+    catch (e) { lastError = e; memoryFallback = json; ok = false; }
+    storageOk = ok;
     if (remote && remote.push) {
       try { Promise.resolve(remote.push(JSON.parse(json), state.meta.lastReason)).catch(e => { lastError = e; }); }
       catch (e) { lastError = e; }
     }
-    return true;
+    return ok;
   }
 
   function clear() {
     memoryFallback = null;
     try { localStorage.removeItem(KEY); } catch (e) { lastError = e; }
+  }
+
+  /** Copie de secours avant un remplacement (une seule, la plus récente). */
+  function backup(state, reason) {
+    if (!state) return false;
+    try { localStorage.setItem(BACKUP_KEY, JSON.stringify({ at: Date.now(), reason: reason || '', state })); return true; }
+    catch (e) { lastError = e; return false; }
+  }
+  function readBackup() {
+    try { const b = JSON.parse(localStorage.getItem(BACKUP_KEY) || 'null'); if (b && validate(b.state).ok) return b; } catch (e) {}
+    return null;
   }
 
   /** Code texte à copier d'un téléphone à l'autre en attendant la synchro. */
@@ -510,15 +605,28 @@ const Save = (() => {
     let bin = ''; bytes.forEach(b => { bin += String.fromCharCode(b); });
     return 'MILIFE1.' + btoa(bin);
   }
-  function importCode(code) {
-    const c = String(code || '').trim().replace(/^MILIFE1\./, '');
-    const bin = atob(c);
-    const bytes = Uint8Array.from(bin, ch => ch.charCodeAt(0));
-    return migrate(JSON.parse(new TextDecoder().decode(bytes)));
+  /** Décode et vérifie un code (ou un JSON brut). Lève une Error au message lisible ; ne touche jamais au stockage. */
+  function decodeCode(code) {
+    let c = String(code || '').trim();
+    if (!c) throw new Error('Le code est vide.');
+    let json;
+    if (c[0] === '{' || c === 'null') json = c;
+    else {
+      c = c.replace(/^MILIFE1\./, '').replace(/\s+/g, '');
+      if (!/^[A-Za-z0-9+/]+=*$/.test(c)) throw new Error('Ce code est abîmé (caractères inattendus). Recopie-le en entier.');
+      try { const bin = atob(c); json = new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(bin, ch => ch.charCodeAt(0))); }
+      catch (e) { throw new Error('Ce code est incomplet ou abîmé. Recopie-le en entier, de « MILIFE1. » jusqu’au bout.'); }
+    }
+    let s;
+    try { s = JSON.parse(json); } catch (e) { throw new Error('Ce code est incomplet ou abîmé. Recopie-le en entier.'); }
+    const v = validate(s);
+    if (!v.ok) throw new Error(v.error);
+    return migrate(clone(s));
   }
+  const importCode = decodeCode;
 
-  return { KEY, VERSION, blank, migrate, load, write, clear, exportCode, importCode,
-           setRemote: a => { remote = a; }, get lastError() { return lastError; } };
+  return { KEY, BACKUP_KEY, VERSION, blank, validate, migrate, load, write, clear, backup, readBackup, exportCode, decodeCode, importCode,
+           setRemote: a => { remote = a; }, get lastError() { return lastError; }, get storageOk() { return storageOk; } };
 })();
 
 /* ===== art.js ===== */
@@ -975,7 +1083,7 @@ const ITEMS = {
 
 const THE = { plante: 'la monstera « Gérard »', guirlande: 'la guirlande lumineuse', photo: 'la photo de vous deux', lampe: 'la lampe champignon', pouf: 'le pouf moutarde', vinyle: 'la platine vinyle', console: 'la console de jeux', affiche: 'l’affiche du « Grand Soir »', cafe: 'la machine à café', camera: 'la caméra sur trépied', stetho: 'le stéthoscope', atlas: 'l’atlas d’anatomie', marteau: 'le marteau réflexe', squelette: 'Jean-Michel, le squelette', horloge: 'l’horloge murale', etagere: 'l’étagère à plantes', guitare: 'la guitare', popcorn: 'la machine à pop-corn', miroir: 'le miroir sur pied', robot: 'Roberto, l’aspirateur robot', sorcier: 'l’affiche de l’école de sorciers', panier: 'le panier du chien', aquarium: 'l’aquarium', biblio: 'la bibliothèque', babyfoot: 'le baby-foot', piano: 'le piano', disco: 'la boule à facettes', armure: 'l’armure' };
 const TITLES = {
-  leonore: ['Externe, 4ᵉ année de médecine', 'Interne à Bicêtre', 'Docteure Lanneau', 'Dʳᵉ Lanneau, cheffe de service'],
+  leonore: ['Externe, 6ᵉ année de médecine, concours en vue', 'Interne à Bicêtre', 'Docteure Lanneau', 'Dʳᵉ Lanneau, cheffe de service'],
   leo:     ['Analyste en fusion-acquisition', 'Associate M&A, cinéaste du dimanche', 'Directeur M&A et réalisateur', 'Associé… et réalisateur']
 };
 const STAGE_NAMES = ['Deux apparts', 'Notre premier appart', 'La maison', 'Le manoir'];
@@ -2281,8 +2389,8 @@ SC.baby = async () => {
   await narr('Neuf mois plus tard.');
   const boy = (await choose(null, 'C’est…', ['Un garçon', 'Une fille'])) === 0;
   let name;
-  if (boy && !S.kids.some(k => k.name === 'Gosio')) { name = 'Gosio'; await say('leo', 'Gosio.'); await say('leonore', 'Gosio.'); await narr('Ils n’ont pas eu besoin d’en discuter. C’était décidé depuis longtemps. La sage-femme a demandé de l’épeler deux fois.'); }
-  else name = await ask(null, boy ? 'Son prénom ? (Gosio est déjà pris.)' : 'Son prénom ? (Mettez-vous d’accord. Bon courage.)', boy ? 'Marius' : 'Rose');
+  if (boy && !S.kids.some(k => /^Gosiot?$/.test(k.name))) { name = 'Gosiot'; await say('leo', 'Gosiot.'); await say('leonore', 'Gosiot.'); await narr('Ils n’ont pas eu besoin d’en discuter. C’était décidé depuis longtemps. La sage-femme a demandé de l’épeler deux fois.'); }
+  else name = await ask(null, boy ? 'Son prénom ? (Gosiot est déjà pris.)' : 'Son prénom ? (Mettez-vous d’accord. Bon courage.)', boy ? 'Marius' : 'Rose');
   const kid = { name, born: S.day, st: 0, look: boy ? 0 : 1 };
   S.kids.push(kid);
   if (!second) {
@@ -2441,7 +2549,7 @@ SC.finale = async () => {
   if (S.party.buffet === 'lasagnes') { await narr('Quarante parts de lasagnes, recette de la coloc.'); await say('mathys', 'Droit de préemption.'); await narr('Il en prend un tiers. Par tradition.'); }
   await narr((S.party.deco === 'projection' ? 'Dans le parc, entre les deux chênes, l’écran s’allume.' : S.party.deco === 'bal' ? 'On a dansé. Même Stéphane. Surtout Stéphane. Puis Léo éteint les lumières du grand salon.' : 'Trois cents mètres de guirlandes s’allument d’un coup. Puis Léo les baisse, une à une.') + (has('super8') ? ' Le vieux Super 8 du grenier ronronne.' : ' La télé OLED s’allume au-dessus de la cheminée. Des noirs parfaits.'));
   await say('leo', 'On a fait un petit film. Enfin, c’est vous qui l’avez fait. On a juste gardé les morceaux.');
-  const mem = S.memories, pickM = [];
+  const mem = S.memories.map(memOf).filter(m => !m.locked), pickM = [];
   const add = m => { if (m && !pickM.includes(m)) pickM.push(m); };
   add(mem[0]); add(mem.find(m => m.icon === '🎁')); add(mem.find(m => m.icon === '🏠')); add(mem.find(m => m.icon === '👶')); add(mem[mem.length - 2]); add(mem[mem.length - 1]);
   for (const m of pickM.slice(0, 5)) await narr(`${m.icon}  Jour ${m.day} — ${m.title}.\n${m.text}`);
@@ -2829,6 +2937,8 @@ const TALKS = {
    SON ET MINI-JEUX — src/minigames.js
    ===================================================================== */
 let AC = null, MUTED = false;
+try { MUTED = localStorage.getItem('milife.prefs.muted') === '1'; } catch (e) {}
+function setMuted(v) { MUTED = !!v; try { localStorage.setItem('milife.prefs.muted', MUTED ? '1' : '0'); } catch (e) {} }
 function sfx(name) {
   if (MUTED) return;
   try {
@@ -3079,7 +3189,7 @@ const MOTS = [
   ['TENNIS', 'Le court de Saint-Rémy. Anne a une pétition. Signe.'],
   ['PLAID', 'Vert chez Léo. Beige sur les fauteuils de la coloc.'],
   ['NOKIA', 'Demande à Stéphane. Prévois une heure.'],
-  ['GOSIO', 'Si c’est un garçon.'],
+  ['GOSIOT', 'Notre enfant imaginaire. Il est déjà partout.'],
   ['FALUCHE', 'Demande à Anastasia.'],
   ['MATECITO', 'C’est toi.'],
   ['MANOIR', 'Peu importe où. Tant qu’on y est tous les deux.']
@@ -3239,10 +3349,17 @@ Object.assign(Mini, {
   },
 
   /* ---------- Le mot du jour : Motus, première lettre offerte ---------- */
-  motus() {
+  /* fixed = {word, cap} pour une surprise ; sinon, le mot du jour reste le même toute la journée réelle */
+  motus(fixed) {
     if (Mini.fast) return Promise.resolve({ score: 5 });
     return new Promise(res => {
-      const n = S.counters.motus || 0, [word, cap] = MOTS[n % MOTS.length], L = word.length, TRIES = 6; S.counters.motus = n + 1;
+      let word, cap;
+      if (fixed && fixed.word) { word = fixed.word; cap = fixed.cap || ''; }
+      else {
+        const day = todayKey(); if (S.counters.motusDay !== day) { S.counters.motusDay = day; S.counters.motusIdx = S.counters.motus || 0; S.counters.motus = (S.counters.motus || 0) + 1; }
+        [word, cap] = MOTS[(S.counters.motusIdx || 0) % MOTS.length];
+      }
+      const L = word.length, TRIES = 6;
       const ov = mgOpen('Le mot du jour', `Un mot de ${L} lettres qui parle de nous. La première lettre est offerte. Vert : bien placée. Jaune : dans le mot, mais ailleurs.`,
         `<div class="motus"><div class="mtG" id="mtG" style="--n:${L}"></div><div class="mtK" id="mtK"></div></div>`, '🔤');
       const rows = [], keys = {}; let cur = word[0], over = true;
@@ -3288,6 +3405,332 @@ const MOTS_LEO = [
   'Je t’aime, matecito. Voilà. C’est écrit, c’est sauvegardé. Signé : beaugossito.'
 ];
 
+/* ===== pack.js ===== */
+/* =====================================================================
+   PAQUET DE SOUVENIRS PRIVÉ — src/pack.js
+   Le dépôt est public : les histoires personnelles ne vivent PAS ici.
+   Elles arrivent dans un fichier JSON choisi par la joueuse (format
+   « milife.pack », voir tests/fixtures/paquet-fictif.json), gardé dans le
+   stockage local du navigateur, séparément de la partie. La progression est
+   rangée dans la partie par identifiants d'épisode stables : réinstaller le
+   même paquet, ou une version enrichie, conserve ce qui a été lu et obtenu.
+   ===================================================================== */
+const Pack = (() => {
+  const KEY = 'milife.pack.v1', SCHEMA = 1;
+  const STEP_TYPES = ['narr', 'say', 'sms', 'scene', 'choice', 'stage', 'if', 'quiz', 'motus', 'tap', 'letter', 'photo', 'item', 'memory', 'recall', 'sfx', 'love', 'incident'];
+  let cur = null, memOnly = false, lastError = null;
+  const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+
+  /** Contrôle complet du paquet. Renvoie {ok, error?, warnings[]}. */
+  function validate(p) {
+    const warnings = [];
+    if (!isObj(p)) return { ok: false, error: 'Ce fichier n’est pas un paquet de souvenirs Mi Life.' };
+    if (p.format !== 'milife.pack') return { ok: false, error: 'Ce fichier n’est pas un paquet de souvenirs Mi Life (format inconnu).' };
+    if (p.schema !== SCHEMA) return { ok: false, error: `Paquet au format v${p.schema}, ce jeu lit le format v${SCHEMA}.` };
+    if (typeof p.id !== 'string' || !/^[a-z0-9-]{2,40}$/.test(p.id)) return { ok: false, error: 'Paquet sans identifiant valide.' };
+    if (!Number.isInteger(p.version) || p.version < 1) return { ok: false, error: 'Paquet sans numéro de version valide.' };
+    if (typeof p.title !== 'string' || !p.title) return { ok: false, error: 'Paquet sans titre.' };
+    if (!Array.isArray(p.episodes) || !p.episodes.length) return { ok: false, error: 'Le paquet ne contient aucun épisode.' };
+    const ids = new Set();
+    const walk = (steps, where) => {
+      if (!Array.isArray(steps)) throw new Error(`${where} : étapes illisibles.`);
+      for (const s of steps) {
+        if (!isObj(s) || !STEP_TYPES.includes(s.t)) throw new Error(`${where} : étape inconnue « ${s && s.t} ».`);
+        if ((s.t === 'say' || s.t === 'sms') && !PEOPLE[s.who]) throw new Error(`${where} : personnage inconnu « ${s.who} ».`);
+        if (s.t === 'item' && !ITEMS[s.id]) throw new Error(`${where} : objet inconnu « ${s.id} ».`);
+        if (s.t === 'choice' || s.t === 'quiz') { if (!Array.isArray(s.options) || s.options.length < 2) throw new Error(`${where} : choix sans options.`); s.options.forEach((o, i) => o.then && walk(o.then, `${where}, option ${i + 1}`)); }
+        if (s.t === 'stage') { walk(s.early || [], where); walk(s.later || [], where); }
+        if (s.t === 'if') { walk(s.then || [], where); walk(s.else || [], where); }
+        if (s.t === 'motus' && !/^[A-Z]{4,9}$/.test(s.word || '')) throw new Error(`${where} : mot du jour invalide (4 à 9 lettres majuscules sans accent).`);
+        if ((s.t === 'photo' || (s.t === 'letter' && s.audio)) && !(p.media && p.media[s.media || s.audio])) warnings.push(`${where} : média « ${s.media || s.audio} » absent, l’étape sera sautée ou affichée sans lui.`);
+      }
+    };
+    try {
+      p.episodes.forEach((e, i) => {
+        const w = `Épisode ${i + 1}`;
+        if (!isObj(e) || typeof e.id !== 'string' || !/^[a-z0-9-]{2,40}$/.test(e.id)) throw new Error(`${w} : identifiant invalide.`);
+        if (ids.has(e.id)) throw new Error(`${w} : identifiant « ${e.id} » en double.`);
+        ids.add(e.id);
+        if (typeof e.title !== 'string' || !e.title) throw new Error(`${w} : titre manquant.`);
+        walk(e.hook || [], w); walk(e.steps, w);
+      });
+    } catch (err) { return { ok: false, error: err.message }; }
+    if (p.items && !isObj(p.items)) return { ok: false, error: 'Liste d’objets illisible.' };
+    if (p.anniversaries && !Array.isArray(p.anniversaries)) return { ok: false, error: 'Liste d’anniversaires illisible.' };
+    return { ok: true, warnings };
+  }
+  function load() {
+    try { const raw = localStorage.getItem(KEY); if (raw) { const p = JSON.parse(raw); if (validate(p).ok) cur = p; } }
+    catch (e) { lastError = e; }
+    return cur;
+  }
+  function parse(text) {
+    let p; try { p = JSON.parse(String(text || '').replace(/^﻿/, '')); } catch (e) { throw new Error('Ce fichier n’est pas lisible (JSON abîmé).'); }
+    const v = validate(p); if (!v.ok) throw new Error(v.error);
+    return { pack: p, warnings: v.warnings };
+  }
+  /** Installe un paquet déjà validé. memOnly = vrai s'il n'a pas pu être gardé (trop lourd) : il faudra le réinstaller à la prochaine ouverture. */
+  function install(p) {
+    const v = validate(p); if (!v.ok) throw new Error(v.error);
+    try { localStorage.setItem(KEY, JSON.stringify(p)); memOnly = false; } catch (e) { lastError = e; memOnly = true; }
+    cur = p; return { memOnly };
+  }
+  function remove() { cur = null; memOnly = false; try { localStorage.removeItem(KEY); } catch (e) { lastError = e; } }
+  const get = () => cur;
+  const episodes = () => (cur ? cur.episodes.slice() : []);
+  const episode = id => (cur ? cur.episodes.find(e => e.id === id) : null);
+  const item = id => (cur && cur.items && cur.items[id]) || null;
+  const media = id => (cur && cur.media && cur.media[id]) || null;
+  return { KEY, SCHEMA, validate, load, parse, install, remove, get, episodes, episode, item, media, get memOnly() { return memOnly; }, get lastError() { return lastError; } };
+})();
+Pack.load();
+
+/* Nom et description d'un objet : le paquet privé peut les personnaliser. */
+const itemName = id => (Pack.item(id) && Pack.item(id).name) || (ITEMS[id] && ITEMS[id].name) || id;
+const itemDesc = id => (Pack.item(id) && Pack.item(id).desc) || (ITEMS[id] && ITEMS[id].desc) || '';
+/* Souvenir : ceux du paquet sont stockés par référence, le texte reste dans le paquet. */
+function memOf(m) {
+  if (!m || !m.ref) return m;
+  const [, epId, k] = m.ref.split(':'), ep = Pack.episode(epId);
+  const src = ep && (k ? (ep.memories || {})[k] : ep.memory);
+  if (src) return { day: m.day, date: m.date, icon: src.icon || m.icon, title: src.title, text: src.text, ref: m.ref };
+  return { day: m.day, date: m.date, icon: m.icon || '🔒', title: 'Un souvenir privé', text: 'Il vit dans ton paquet de souvenirs. Réinstalle-le pour le relire.', ref: m.ref, locked: true };
+}
+
+/* ===== surprises.js ===== */
+/* =====================================================================
+   SURPRISES DU JOUR — src/surprises.js
+   Au plus UNE nouvelle surprise par jour réel (date locale de l'appareil,
+   indépendante du calendrier du jeu). Ordre stable : les épisodes du paquet
+   privé, puis les post-its d'origine (MOTS_LEO, compteur S.counters.mots).
+   Sans paquet : les post-its d'origine. Une surprise non lue reste en attente
+   et bloque la suivante : elle avance à son rythme. Zéro moment, zéro euro.
+   ===================================================================== */
+const pad2 = n => String(n).padStart(2, '0');
+const todayKey = d => { d = d || new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+const epState = id => { const d = S.daily; return (d.ep[id] = d.ep[id] || { answers: {}, items: {}, plays: 0 }); };
+const isUnlocked = id => S.daily.unlocked.some(u => u.id === id);
+
+/** La surprise débloquée et pas encore lue (au plus une), ou null. */
+function pendingSurprise() {
+  const autoNote = (S.notes || []).find(n => n.auto && n.from === 'leo' && !n.read);
+  for (let i = S.daily.unlocked.length - 1; i >= 0; i--) {
+    const u = S.daily.unlocked[i];
+    if (u.kind === 'ep' && Pack.episode(u.id.slice(3)) && !(S.daily.ep[u.id.slice(3)] || {}).read) return { kind: 'ep', id: u.id.slice(3) };
+  }
+  if (autoNote) return { kind: 'mot', note: autoNote };
+  return null;
+}
+/** Prochaine surprise de la série, sans la débloquer. */
+function seriesNext() {
+  for (const ep of Pack.episodes()) if (!isUnlocked('ep:' + ep.id)) return { kind: 'ep', id: ep.id };
+  const n = S.counters.mots || 0;
+  if (n < MOTS_LEO.length) return { kind: 'mot', n };
+  return null;
+}
+/** Débloque la surprise du jour si c'est un nouveau jour réel. Renvoie vrai si quelque chose de nouveau est arrivé. */
+function checkDaily() {
+  if (!S || !S.seen.intro || !S.daily) return false;
+  const d = S.daily, today = todayKey(); let news = false;
+  // rappels d'anniversaire (en plus, une fois par an)
+  const now = new Date();
+  for (const a of (Pack.get() && Pack.get().anniversaries) || []) {
+    const k = `${a.id}:${now.getFullYear()}`;
+    if (a.m === now.getMonth() + 1 && a.d === now.getDate() && !d.anniv[k]) { d.anniv[k] = { day: today, read: false }; news = true; }
+  }
+  if (d.lastDay !== today && !pendingSurprise()) {
+    const nx = seriesNext();
+    if (nx && nx.kind === 'ep') { d.unlocked.push({ id: 'ep:' + nx.id, day: today, kind: 'ep' }); d.lastDay = today; news = true; }
+    else if (nx && nx.kind === 'mot') { if (leoNote()) { d.unlocked.push({ id: 'mot:' + nx.n, day: today, kind: 'mot' }); d.lastDay = today; news = true; } }
+  }
+  if (news) commit('daily');
+  return news;
+}
+function pendingAnniv() {
+  const P = Pack.get(); if (!P || !P.anniversaries) return null;
+  for (const [k, v] of Object.entries(S.daily.anniv)) if (!v.read) { const a = P.anniversaries.find(x => x.id === k.split(':')[0]); if (a) return { key: k, a }; }
+  return null;
+}
+async function playAnniv() {
+  const pa = pendingAnniv(); if (!pa || UI.busy) return;
+  await run(async () => {
+    UI.slug = pa.a.slug || 'UN AN PLUS TARD, OU PRESQUE'; UI.surprise = true;
+    S.daily.anniv[pa.key].read = true; Save.write(S, 'anniv');
+    await runSteps(pa.a.steps || [{ t: 'sms', who: 'leo', text: pa.a.text || '' }], { ep: { id: 'anniv' }, st: { answers: {}, items: {} }, replay: false });
+  }, 'anniv');
+}
+async function openSurprise() {
+  const p = pendingSurprise(); if (!p || UI.busy) return;
+  if (p.kind === 'mot') { if (S.active !== 'leonore') { S.active = 'leonore'; renderTop(); } return readNote(); }
+  return playEpisode(p.id, false);
+}
+
+/* ---------- Moteur d'épisodes : interprète les étapes du paquet ---------- */
+function tpl(t, ctx) {
+  if (typeof t !== 'string') return '';
+  return t.replace(/\{(\w+)(?::([\w-]+))?\}/g, (m, k, a) => {
+    if (k === 'nickL') return nkL(); if (k === 'nickO') return nkO();
+    if (k === 'nickl') return lc(nkL()); if (k === 'nicko') return lc(nkO());
+    if (k === 'home') return ROOMS[homeId()].name;
+    if (k === 'specialty') return S.flags.specialty || '';
+    if (k === 'answer' && ctx) { const v = ctx.st.answers[a]; return v == null ? '' : String(v); }
+    return m;
+  });
+}
+function condOk(c, ctx) {
+  if (!c) return true;
+  if (c.flag) return !!S.flags[c.flag] && (c.eq === undefined || S.flags[c.flag] === c.eq);
+  if (c.answer) { const v = ctx.st.answers[c.answer]; return c.eq === undefined ? v != null : v === c.eq; }
+  if (c.stageMin != null) return S.stage >= c.stageMin;
+  if (c.read) return !!(S.daily.ep[c.read] || {}).read;
+  return true;
+}
+async function runSteps(steps, ctx) { for (const s of steps || []) { if (ctx.stop) return; await runStep(s, ctx); } }
+async function runStep(s, ctx) {
+  const T = t => tpl(t, ctx);
+  switch (s.t) {
+    case 'narr': return narr(T(s.text));
+    case 'say': return say(s.who, T(s.text));
+    case 'sms': return say(s.who, '📱 ' + T(s.text));
+    case 'scene': return at(s.home && s.home !== 'here' ? s.home : null, s.room || 0, s.cast || ['leonore'], s.title ? T(s.title) : undefined);
+    case 'stage': return runSteps(S.stage === 0 ? s.early : (s.later || s.early), ctx);
+    case 'if': return runSteps(condOk(s.cond || s, ctx) ? s.then : s.else, ctx);
+    case 'choice': {
+      const opts = s.options.filter(o => condOk(o.cond, ctx));
+      const i = await choose(s.who === undefined ? 'leonore' : s.who, T(s.prompt), opts.map(o => T(o.label)));
+      const o = opts[i], val = o.value !== undefined ? o.value : i;
+      if (s.key) {
+        if (s.keep === 'history') { const h = ctx.st.answers[s.key + '_all'] = ctx.st.answers[s.key + '_all'] || []; h.push(val); if (h.length > 12) h.shift(); ctx.st.answers[s.key] = val; }
+        else if (!(s.key in ctx.st.answers)) ctx.st.answers[s.key] = val;
+        Save.write(S, 'ep:answer');
+      }
+      return runSteps(o.then, ctx);
+    }
+    case 'recall': {
+      const h = ctx.st.answers[s.key + '_all'], prev = s.previous ? (h && h.length > 1 ? h[h.length - 2] : undefined) : ctx.st.answers[s.key];
+      if (prev !== undefined && s.texts && s.texts[prev]) return narr(T(s.texts[prev]));
+      if (prev === undefined && s.none) return narr(T(s.none));
+      return;
+    }
+    case 'quiz': {   // énigme à choix : une mauvaise réponse donne un indice, jamais de blocage
+      let opts = s.options.map((o, i) => ({ o, i }));
+      for (let n = 0; ; n++) {
+        const k = await choose(s.who === undefined ? 'leonore' : s.who, T(s.prompt), opts.map(x => T(x.o.label)).concat(n > 0 || s.skip ? ['Je donne ma langue au teckel'] : []));
+        if (k >= opts.length) { if (s.reveal) await narr(T(s.reveal)); break; }
+        const pick = opts[k];
+        if (pick.i === s.answer) { if (s.win) await narr(T(s.win)); break; }
+        await narr(T(pick.o.hint || (s.hints || [])[n] || 'Raté. Mais tu chauffes.'));
+        opts = opts.filter(x => x !== pick);
+        if (opts.length <= 1) { if (s.reveal) await narr(T(s.reveal)); break; }
+      }
+      if (s.key && !(s.key in ctx.st.answers)) ctx.st.answers[s.key] = 'ok';
+      return;
+    }
+    case 'motus': { const r = await Mini.motus({ word: s.word, cap: T(s.caption || '') }); if (s.after) await narr(T(s.after)); return r; }
+    case 'tap': return tapMoment(s);
+    case 'letter': return showLetter(T(s.title || ''), T(s.text), s.audio ? Pack.media(s.audio) : null, T(s.sign || ''));
+    case 'photo': { const m = Pack.media(s.media); if (m) return showLetter(T(s.caption || ''), '', null, '', m); return; }
+    case 'item': {
+      if (!ctx.st.items[s.id] || !has(s.id)) { giveItem(s.id, 'leonore'); ctx.st.items[s.id] = todayKey(); Save.write(S, 'ep:item'); toast(`🎁 ${itemName(s.id)} rejoint ton inventaire · à placer avec 🎨 Décorer`); sfx('love'); }
+      return s.text ? narr(T(s.text)) : undefined;
+    }
+    case 'memory': {
+      const ref = 'pack:' + ctx.ep.id + (s.key ? ':' + s.key : '');
+      if (!S.memories.some(m => m.ref === ref)) { S.memories.push({ day: S.day, date: S.date, icon: s.icon || '📔', title: '', text: '', ref }); toast('📔 Nouveau souvenir'); Save.write(S, 'ep:memory'); }
+      return;
+    }
+    case 'love': if (!ctx.replay) love(s.n || 1); return;
+    case 'incident': if (!ctx.replay) incident(T(s.text)); return;
+    case 'sfx': return sfx(s.name);
+  }
+}
+async function playEpisode(id, replay) {
+  const ep = Pack.episode(id); if (!ep || UI.busy) return;
+  await run(async () => {
+    UI.surprise = true;
+    if (S.active !== 'leonore') { S.active = 'leonore'; renderTop(); }
+    const st = epState(id), ctx = { ep, st, replay };
+    UI.slug = ep.slug || (replay ? 'RELECTURE — ' : 'LA SURPRISE DU JOUR — ') + ep.title.toUpperCase();
+    if (!replay) {
+      await runSteps(ep.hook || [], ctx);
+      const go = await choose('leonore', ep.ask || 'Tu regardes ça maintenant ?', ['Maintenant', 'Plus tard (ça t’attendra)']);
+      if (go === 1) { S.daily.later = todayKey(); await narr('Ça t’attendra dans Journée. Rien ne s’envole.'); return; }
+      if (!st.opened) { st.opened = todayKey(); Save.write(S, 'ep:open'); }
+    }
+    await runSteps(ep.steps, ctx);
+    if (!st.read) { st.read = true; st.readDay = todayKey(); }
+    st.plays = (st.plays || 0) + 1;
+    UI.surprise = false;
+  }, 'ep:' + id);
+}
+
+/* Petite interaction au toucher (ex. : une boule de neige) — facultative, on peut passer. */
+function tapMoment(s) {
+  if (UI.fastText) return Promise.resolve();
+  return new Promise(res => {
+    const ov = $('#overlay'), need = s.count || 5; let n = 0;
+    ov.className = 'show tapm';
+    ov.innerHTML = `<div class="tapBox"><p>${esc(s.prompt || 'Touche !')}</p><button class="tapZone" id="tapZ" aria-label="${esc(s.prompt || 'Touche')}"><span>${esc(s.emoji || '❄️')}</span><i id="tapN">0 / ${need}</i></button><button class="ghost" id="tapSkip">Passer</button></div>`;
+    const end = () => { ov.className = ''; ov.innerHTML = ''; res(); };
+    $('#tapZ').onclick = e => {
+      n++; sfx('pop'); $('#tapN').textContent = `${n} / ${need}`;
+      const f = document.createElement('b'); f.className = 'tapFx'; f.textContent = s.emoji || '❄️'; f.style.left = (20 + Math.random() * 60) + '%'; $('#tapZ').appendChild(f); setTimeout(() => f.remove(), 900);
+      if (n >= need) { $('#tapZ').disabled = true; setTimeout(async () => { end(); }, 450); }
+    };
+    $('#tapSkip').onclick = end;
+  }).then(() => (s.done ? narr(tpl(s.done)) : undefined));
+}
+/* Lettre ou transcription, avec vocal ou photo facultatifs (fichiers du paquet uniquement). */
+function showLetter(title, text, audio, sign, img) {
+  return new Promise(res => {
+    const ov = $('#overlay'); ov.className = 'show letter';
+    ov.innerHTML = `<div class="paper">${title ? `<h3>${esc(title)}</h3>` : ''}${img ? `<img src="${esc(img)}" alt="${esc(title)}">` : ''}${text ? `<p>${esc(text)}</p>` : ''}${sign ? `<p class="sign">${esc(sign)}</p>` : ''}${audio ? `<audio controls preload="none" src="${esc(audio)}"></audio>` : ''}<button class="primary" id="ltGo">Refermer</button></div>`;
+    $('#ltGo').onclick = () => { const a = ov.querySelector('audio'); if (a) a.pause(); ov.className = ''; ov.innerHTML = ''; res(); };
+  });
+}
+
+/* Écran « Mes souvenirs » : installer, mettre à jour ou retirer le paquet privé. */
+function showPack(back) {
+  const ov = $('#overlay'); ov.className = 'show title'; const P = Pack.get(); let found = null;
+  const done = P && S ? P.episodes.filter(e => (S.daily.ep[e.id] || {}).read).length : 0;
+  ov.innerHTML = `<div class="titleBox set"><h2>Mes souvenirs</h2>
+    ${P ? `<div class="prev"><b>Installé : « ${esc(P.title)} » · version ${P.version}</b><small>${P.episodes.length} épisodes${S ? ` · ${done} déjà lu${done > 1 ? 's' : ''}` : ''}${Pack.memOnly ? ' · ⚠️ trop lourd pour rester installé : à réinstaller à la prochaine ouverture' : ''}</small></div>`
+        : '<p>Le paquet de souvenirs est un fichier à part, qui reste sur cet appareil. Le jeu marche très bien sans lui ; avec lui, une surprise t’attend chaque jour.</p>'}
+    <label class="ghost filebtn">📂 ${P ? 'Installer une nouvelle version' : 'Choisir le fichier de souvenirs'}<input type="file" id="pFile" hidden></label>
+    <p class="msg" id="pMsg" role="alert"></p><div id="pPrev"></div>
+    ${P ? '<button class="ghost" id="pDel">Retirer le paquet de cet appareil</button>' : ''}
+    <button class="ghost" id="pBack">Retour</button></div>`;
+  const msg = (t, ok) => { $('#pMsg').textContent = t || ''; $('#pMsg').classList.toggle('ok', !!ok); };
+  $('#pBack').onclick = back;
+  if (P) $('#pDel').onclick = () => { if (!$('#pDel').dataset.sure) { $('#pDel').dataset.sure = 1; $('#pDel').textContent = 'Retirer ? Ta progression reste dans la partie.'; return; } Pack.remove(); toast('Paquet retiré. Ta progression est gardée.'); if (S) render(); showPack(back); };
+  $('#pFile').onchange = e => {
+    const f = e.target.files[0]; if (!f) return; const r = new FileReader();
+    r.onerror = () => msg('Impossible de lire ce fichier.');
+    r.onload = () => {
+      try { found = Pack.parse(r.result); } catch (err) { $('#pPrev').innerHTML = ''; return msg(err.message); }
+      const p = found.pack, older = P && P.id === p.id && p.version < P.version;
+      const kept = S ? p.episodes.filter(e => (S.daily.ep[e.id] || {}).read).length : 0;
+      msg('Fichier valide.', true);
+      $('#pPrev').innerHTML = `<div class="prev${older ? ' warn' : ''}"><b>« ${esc(p.title)} » · version ${p.version}</b><small>${p.episodes.length} épisodes${kept ? ` · ${kept} déjà lu${kept > 1 ? 's' : ''}, conservé${kept > 1 ? 's' : ''}` : ''}${older ? ` · ⚠️ plus ancien que la version installée (v${P.version})` : ''}</small>${found.warnings.map(w => `<small>${esc(w)}</small>`).join('')}</div><button class="primary" id="pGo">${P ? 'Remplacer' : 'Installer'}</button>`;
+      $('#pGo').onclick = () => {
+        try { const r2 = Pack.install(p); toast(r2.memOnly ? 'Souvenirs chargés pour cette fois (trop lourds pour rester installés)' : `Souvenirs installés · « ${p.title} »`); }
+        catch (err) { return msg(err.message); }
+        sfx('love'); if (S) { checkDaily(); render(); } showPack(back);
+      };
+    };
+    r.readAsText(f);
+  };
+}
+
+/** Vérifie la date réelle (reprise, retour sur l'onglet, minuit passé l'onglet ouvert). */
+function surpriseTick() {
+  if (!S || UI.busy || document.querySelector('#overlay.show')) return;
+  if (checkDaily()) { if (UI.tab === 'day' || UI.tab === 'album') renderPanel(); renderTabs(); toast(pendingSurprise() || pendingAnniv() ? '🎁 Une surprise t’attend dans Journée' : '📅 Nouveau jour'); }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) surpriseTick(); });
+window.addEventListener('focus', surpriseTick);
+setInterval(surpriseTick, 60000);
+
 /* ===== game.js ===== */
 /* =====================================================================
    MOTEUR ET INTERFACE — src/game.js
@@ -3295,7 +3738,7 @@ const MOTS_LEO = [
    se termine par commit(), qui appelle Save.write().
    ===================================================================== */
 let S = null;
-const UI = { tab: 'day', room: 0, override: null, dlg: null, busy: false, partyMode: false, mathysBow: false, dlgAt: 0, log: [], slug: '', posX: null, moving: null, payF: 1, fastText: false };
+const UI = { tab: 'day', room: 0, override: null, dlg: null, busy: false, partyMode: false, mathysBow: false, dlgAt: 0, log: [], slug: '', posX: null, moving: null, payF: 1, fastText: false, surprise: false, skipping: false, decor: null };
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const other = w => (w === 'leonore' ? 'leo' : 'leonore');
@@ -3343,7 +3786,14 @@ function confetti() {
   app.appendChild(box); setTimeout(() => box.remove(), 3200); sfx('fanfare');
 }
 function giveItem(id, owner) { if (!has(id)) S.items.push({ id, owner, day: S.day }); }
-function commit(reason) { checkAch(); Save.write(S, reason); }
+let storageWarned = false;
+function commit(reason) {
+  checkAch();
+  const ok = Save.write(S, reason);
+  if (!ok && !storageWarned) { storageWarned = true; toast('⚠️ Sauvegarde impossible sur cet appareil (stockage plein ou bloqué). Copie ton code dans Projets › Réglages.'); }
+  if (ok) storageWarned = false;
+  return ok;
+}
 
 function toast(msg) {
   const box = $('#toasts'); if (!box) return;
@@ -3401,6 +3851,8 @@ function entryEl(d, current) {
 }
 function renderDlg() {
   const d = UI.dlg, p = $('#panel'); if (!d) return;
+  if (UI.skipping && !d.opts && d.input === undefined) { UI.dlg = null; UI.log.push(d); if (!d.who && UI.slug) UI.slug = ''; return void setTimeout(() => d.res(), 0); }
+  if (d.opts || d.input !== undefined) UI.skipping = false;
   UI.dlgAt = Date.now();
   if (!d.who && UI.slug) { d.slug = UI.slug; UI.slug = ''; }
   p.innerHTML = '';
@@ -3425,6 +3877,7 @@ function renderDlg() {
   } else {
     const e = entryEl(d, true); e.classList.add('cur'); box.appendChild(e);
     const n = document.createElement('div'); n.className = 'dlgNext'; n.textContent = '▸'; box.appendChild(n);
+    if (UI.surprise) { const sk = document.createElement('button'); sk.className = 'skipBtn'; sk.textContent = '⏩ Passer'; sk.setAttribute('aria-label', 'Passer la narration jusqu’au prochain choix'); sk.onclick = ev => { ev.stopPropagation(); UI.skipping = true; done(); }; box.appendChild(sk); }
     if (d.who) { const sp = document.querySelector(`#scene [data-hs="pp_${d.who}"]`); if (sp) sp.classList.add('talking'); }
     let typing = !UI.fastText && e._txt.length > 12, i = 0, timer = null;
     if (typing) {
@@ -3440,7 +3893,7 @@ async function run(fn, reason) {
   if (UI.busy) return;
   UI.busy = true; UI.log = []; UI.slug = ''; closeBubble(); document.body.classList.add('dlgmode');
   try { await fn(); } catch (e) { console.error(e); toast('Oups : ' + e.message); }
-  UI.busy = false; UI.dlg = null; UI.override = null; UI.partyMode = false; UI.mathysBow = false; UI.payF = 1;
+  UI.busy = false; UI.dlg = null; UI.override = null; UI.partyMode = false; UI.mathysBow = false; UI.payF = 1; UI.surprise = false; UI.skipping = false;
   document.body.classList.remove('dlgmode');
   commit(reason); render();
   await story();
@@ -3511,7 +3964,6 @@ function dayCard() {
 const realDay = d => { d = d || new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 async function dailyBonus() {
   const today = realDay(); if (!S.login) S.login = { day: '', streak: 0 };
-  if (S.seen.intro && !(S.counters.mots)) { leoNote(); commit('note'); render(); }
   if (!S.login.day) { S.login.day = today; S.login.streak = 1; return; }   // première ouverture : pas de « vous revoilà »
   if (!S.seen.intro || S.login.day === today) return;
   const y = new Date(); y.setDate(y.getDate() - 1);
@@ -3531,10 +3983,13 @@ async function dailyBonus() {
     if (now.getMonth() === 9 && now.getDate() === 17) await say('leonore', '📱 joyeux anniversaire beaugossito. le vrai');
   }, 'daily');
 }
+/* Post-it d'origine suivant (compteur S.counters.mots). Un post-it manuel en attente ne bloque pas : seul un post-it
+   d'origine non lu le fait. Renvoie vrai si un post-it a été déposé. */
 function leoNote() {
   const i = S.counters.mots || 0; if (!S.notes) S.notes = [];
-  if (i >= MOTS_LEO.length || S.notes.some(n => n.from === 'leo' && !n.read)) return;
+  if (i >= MOTS_LEO.length || S.notes.some(n => n.auto && n.from === 'leo' && !n.read)) return false;
   S.notes.push({ from: 'leo', text: MOTS_LEO[i], ts: Date.now(), day: S.day, read: false, auto: 1 }); S.counters.mots = i + 1;
+  return true;
 }
 /* Les petits mots du frigo : de vrais messages, écrits par les joueurs, gardés pour toujours. */
 async function writeNote() {
@@ -3549,7 +4004,10 @@ async function writeNote() {
   }, 'note');
 }
 async function readNote() {
-  if (UI.busy) return; const a = S.active, n = (S.notes || []).find(n => n.from !== a && !n.read); if (!n) return;
+  if (UI.busy) return;
+  let n = (S.notes || []).find(n => n.from !== S.active && !n.read);
+  if (!n) { n = (S.notes || []).find(n => n.from === S.active && !n.read); if (!n) return; S.active = other(n.from); renderTop(); }
+  const a = S.active;
   await run(async () => {
     UI.slug = 'SUR LE FRIGO'; n.read = true;
     await narr(`Un post-it sur le frigo. L’écriture de ${PEOPLE[n.from].name}${n.from === 'leo' ? ', bien alignée' : ', qui penche'}.`);
@@ -3862,8 +4320,12 @@ function renderPanel() {
     const L = S.mail && !S.mail.read && S.mail.day === S.day ? LETTERS[S.mail.id] : null;
     if (L && (S.stage > 0 || L.to === a)) h += `<button class="act mail" data-mail="1"><span class="ic">📬</span><span class="tx"><b>Il y a du courrier</b><i>Une enveloppe dans la boîte aux lettres</i></span></button>`;
     if (S.wants && S.wants[a]) h += `<div class="tip wish">⭐ <b>Envie du jour :</b> ${PEOPLE[a].name} ${WANT_TXT[S.wants[a]] || ''}. La combler rapporte un bonus.</div>`;
-    const nt = (S.notes || []).find(n => n.from !== a && !n.read);
-    if (nt) h += `<button class="act mail note" data-readnote="1"><span class="ic">💌</span><span class="tx"><b>Un mot sur le frigo</b><i>De la part de ${a === 'leonore' ? nkO() : nkL()}. Un vrai.</i></span></button>`;
+    if (!Save.storageOk) h += `<div class="tip warnTip">⚠️ <b>La sauvegarde a échoué sur cet appareil</b> (stockage plein ou bloqué). Va dans Projets › Réglages pour copier ton code.</div>`;
+    const ps = pendingSurprise(), pa = pendingAnniv();
+    if (pa) h += `<button class="act surp" data-anniv="1"><span class="ic">📅</span><span class="tx"><b>${esc(pa.a.label || 'Un rappel, aujourd’hui')}</b><i>Un petit mot pour la date · quelques secondes</i></span></button>`;
+    if (ps && ps.kind === 'ep') { const ep = Pack.episode(ps.id), st = S.daily.ep[ps.id] || {}; h += `<button class="act surp" data-surprise="1"><span class="ic">${esc(ep.icon || '🎁')}</span><span class="tx"><b>La surprise du jour${st.opened ? ' · à finir' : ''}</b><i>Pour Léonore · ${esc(ep.teaser || '1 à 3 minutes')} · ne prend pas de moment</i></span></button>`; }
+    const nt = (S.notes || []).find(n => n.from !== a && !n.read) || (ps && ps.kind === 'mot' ? ps.note : null);
+    if (nt) h += `<button class="act mail note" data-readnote="1"><span class="ic">💌</span><span class="tx"><b>${nt.auto ? 'La surprise du jour : un mot sur le frigo' : 'Un mot sur le frigo'}</b><i>De la part de ${nt.from === 'leo' ? nkO() : nkL()}. Un vrai.</i></span></button>`;
     const ft = feteToday();
     if (ft) h += `<button class="act fete" data-fete="1"><span class="ic">${ft.ic}</span><span class="tx"><b>${ft.name}</b><i>C’est aujourd’hui, ${dateLabel(S.date)}. Tout le monde vous attend. Ne prend pas de moment.</i></span></button>`;
     if (!S.firstItem) h += `<div class="tip">Un premier achat t’attend dans la <b>Boutique</b>. Il apparaîtra dans la pièce.</div>`;
@@ -3904,8 +4366,17 @@ function renderPanel() {
   }
   if (UI.tab === 'album') {
     h += `<div class="hello"><h2>Souvenirs</h2><p>${S.memories.length} souvenir${S.memories.length > 1 ? 's' : ''} à deux.</p></div>`;
+    { const P = Pack.get(), un = S.daily.unlocked.filter(u => u.kind === 'ep'), ps = pendingSurprise();
+      if (P || un.length) {
+        h += `<h3>${P ? esc(P.title) : 'Mes souvenirs'} <span class="dots">${un.filter(u => (S.daily.ep[u.id.slice(3)] || {}).read).length} sur ${P ? P.episodes.length : un.length}</span></h3>`;
+        if (P) h += `<div class="eps">` + P.episodes.map((e, i) => { const u = isUnlocked('ep:' + e.id), st = S.daily.ep[e.id] || {};
+          return u ? `<button class="ep ${st.read ? 'read' : 'new'}" data-${st.read ? 'replay' : 'surprise'}="${esc(e.id)}"><span>${esc(e.icon || '🎁')}</span><b>${esc(e.title)}</b><i>${st.read ? 'Relire' : 'À découvrir'}</i></button>`
+                   : `<span class="ep lock"><span>🔒</span><b>Épisode ${i + 1}</b><i>${i === P.episodes.findIndex(x => !isUnlocked('ep:' + x.id)) && !ps ? 'Demain' : 'Bientôt'}</i></span>`; }).join('') + `</div>`;
+        else h += `<p class="done">${un.length} épisode${un.length > 1 ? 's' : ''} déjà découvert${un.length > 1 ? 's' : ''}. Réinstalle ton paquet de souvenirs pour les relire.</p>`;
+      }
+      h += `<button class="ghost wide" data-pack="1">📦 ${P ? 'Mes souvenirs : version ' + P.version : 'Installer mes souvenirs'}</button>`; }
     h += `<div class="stats"><span>🧦 Chaussettes de Mathys <b>${S.found.socks}</b></span><span>🧶 Cheveux de Léonore retrouvés <b>${S.found.chous}</b></span></div>`;
-    h += S.memories.length ? `<div class="wall">` + S.memories.slice().reverse().map((m, i) => `<div class="mem r${i % 4}"><div class="ph">${m.icon}</div><b>${esc(m.title)}</b><small>${m.date ? new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Jour ' + m.day}</small><p>${esc(m.text)}</p></div>`).join('') + `</div>` : `<p class="done">Encore rien. Sortez, cuisinez, surprenez-vous.</p>`;
+    h += S.memories.length ? `<div class="wall">` + S.memories.slice().reverse().map(memOf).map((m, i) => `<div class="mem r${i % 4}"><div class="ph">${m.icon}</div><b>${esc(m.title)}</b><small>${m.date ? new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Jour ' + m.day}</small><p>${esc(m.text)}</p></div>`).join('') + `</div>` : `<p class="done">Encore rien. Sortez, cuisinez, surprenez-vous.</p>`;
     const my = MYST.filter(m => m.on());
     h += `<h3>Affaires en cours <span class="dots">${my.length} sur ${MYST.length} découvertes</span></h3><div class="myst">` + my.map(m => { const ok = m.done ? m.done() : S.ended; return `<p>${ok ? '✅' : '❓'} ${m.q}${m.x ? ` <small>${m.x()}</small>` : ''}${ok ? ` <small>${m.done ? 'Résolu.' : 'Réponse à la grande soirée.'}</small>` : ''}</p>`; }).join('') + (my.length < MYST.length ? `<p class="lock">🔒 ${MYST.length - my.length} autre${MYST.length - my.length > 1 ? 's' : ''} à découvrir en jouant</p>` : '') + `</div>`;
     if ((S.notes || []).length) h += `<h3>Les petits mots du frigo</h3><div class="postits">` + S.notes.slice().reverse().map((n, i) => `<div class="postit p${i % 3} ${n.from}"><p>${n.from !== a && !n.read ? '<i>Pas encore lu. Il t’attend sur le frigo.</i>' : esc(n.text)}</p><small>${PEOPLE[n.from].name} · ${new Date(n.ts).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</small></div>`).join('') + `</div>`;
@@ -3965,40 +4436,114 @@ function credits() {
 }
 
 /* ---------- Écran titre et réglages ---------- */
+const saveLabel = st => `jour ${st.day} · ${STAGE_NAMES[st.stage].toLowerCase()}`;
+const saveDetail = st => `${(st.items || []).length} objet${(st.items || []).length > 1 ? 's' : ''} · ${(st.memories || []).length} souvenir${(st.memories || []).length > 1 ? 's' : ''} · complicité ${st.love}`;
+function downloadText(name, text) {
+  try {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' })); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); return true;
+  } catch (e) { return false; }
+}
+const saveFileName = st => `mi-life-sauvegarde-jour-${st.day}-${new Date().toISOString().slice(0, 10)}.txt`;
+async function copyText(t) { try { await navigator.clipboard.writeText(t); return true; } catch (e) { return false; } }
+function startGame(st) {
+  const ov = $('#overlay'); S = st; ov.className = ''; ov.innerHTML = ''; UI.tab = 'day'; UI.room = 0; UI.posX = null; UI.decor = null;
+  if (!S.date) S.date = Date.now(); if (!S.trouvailles.length && S.day === 1) spawnFinds();
+  if (!S.wants || (!S.wants.leo && !S.wants.leonore && S.day === 1)) newWants();
+  if (!S.visitor || (!S.visitor.leo && S.day > 1)) newVisitors();
+  render(); story().then(dailyBonus).then(surpriseTick);
+}
 function showTitle(saved) {
   const ov = $('#overlay'); ov.className = 'show title';
+  const bk = Save.readBackup();
   ov.innerHTML = `<div class="titleBox poster"><div class="laurel">❦ Sélection officielle ❦<br><span>Festival du Canapé Marron</span></div>
     <div class="duo2"><svg viewBox="-70 -132 140 140"><circle cx="38" cy="-104" r="13" fill="#f4e7b8" opacity=".9"/>${[[-58, -116], [-30, -124], [4, -118], [58, -76], [-62, -70]].map(c => `<circle class="bulb" cx="${c[0]}" cy="${c[1]}" r="1.200" fill="#fff"/>`).join('')}${person('leonore', -22, 0, 1)}${person('leo', 22, 0, 1)}<g transform="translate(-4,-3)"><rect x="-12" y="-5" width="22" height="4.400" rx="2.200" fill="#111"/><circle cx="11" cy="-5.600" r="2.900" fill="#111"/><rect x="12" y="-6" width="5.500" height="2.200" rx="1.100" fill="#111"/><path d="M-10,-1 v3 M-7,-1 v3 M5,-1 v3 M8,-1 v3" stroke="#111" stroke-width="1.6"/></g></svg></div>
     <h1>Mi Life</h1><p class="ded">Pour Léonore. De la part de Léo, et du teckel.</p>
     <p class="cast">avec <b>Léonore Lanneau</b> · <b>Léo Chety</b><br>et <b>Mathys</b> dans le rôle du coloc</p>
-    ${saved ? `<button class="primary" id="tCont">Continuer · jour ${saved.day}, ${STAGE_NAMES[saved.stage].toLowerCase()}</button><button class="ghost" id="tNew">Nouvelle partie</button>` : `<button class="primary" id="tNew">Commencer</button>`}
-    <small>${saved && saved.stats && saved.stats.finishMs ? 'Grande soirée atteinte en ' + clock(saved.stats.finishMs) + '. ' : ''}La partie se sauvegarde toute seule sur ce téléphone.</small></div>`;
-  const start = st => { S = st; ov.className = ''; ov.innerHTML = ''; UI.tab = 'day'; UI.room = 0; UI.posX = null; if (!S.date) S.date = Date.now(); if (!S.trouvailles.length && S.day === 1) spawnFinds(); if (!S.wants || (!S.wants.leo && !S.wants.leonore && S.day === 1)) newWants(); if (!S.visitor || (!S.visitor.leo && S.day > 1)) newVisitors(); render(); story().then(dailyBonus); };
-  if (saved) $('#tCont').onclick = () => { sfx('tap'); start(saved); };
+    ${saved ? `<button class="primary" id="tCont">Continuer · ${saveLabel(saved)}</button><button class="ghost" id="tNew">Nouvelle partie</button>` : `<button class="primary" id="tNew">Commencer</button>`}
+    <button class="ghost" id="tImp">📥 Importer une partie</button>
+    ${bk ? `<button class="ghost" id="tRest">↩︎ Restaurer la partie précédente · ${saveLabel(bk.state)}</button>` : ''}
+    <button class="ghost" id="tPack">📦 ${Pack.get() ? `Mes souvenirs : « ${esc(Pack.get().title)} » v${esc(Pack.get().version)}` : 'Installer mes souvenirs'}</button>
+    ${Save.storageOk ? '' : '<p class="msg">⚠️ Ce navigateur refuse d’enregistrer la partie (stockage plein ou bloqué). Exporte ton code depuis les réglages.</p>'}
+    <small>${saved && saved.stats && saved.stats.finishMs ? 'Grande soirée atteinte en ' + clock(saved.stats.finishMs) + '. ' : ''}La partie se sauvegarde toute seule sur cet appareil, dans ce navigateur.</small></div>`;
+  if (saved) $('#tCont').onclick = () => { sfx('tap'); startGame(saved); };
   $('#tNew').onclick = () => {
-    if (saved && !$('#tNew').dataset.sure) { $('#tNew').dataset.sure = 1; $('#tNew').textContent = 'Effacer la partie en cours et recommencer ?'; return; }
-    sfx('tap'); const st = Save.blank(); Save.write(st, 'new'); start(st);
+    if (saved && !$('#tNew').dataset.sure) { $('#tNew').dataset.sure = 1; $('#tNew').textContent = 'Effacer la partie en cours et recommencer ? (une copie de secours est gardée)'; return; }
+    sfx('tap'); if (saved) Save.backup(saved, 'new'); const st = Save.blank(); Save.write(st, 'new'); startGame(st);
+  };
+  $('#tImp').onclick = () => showImport(saved, 'title');
+  if (bk) $('#tRest').onclick = () => showRestore(saved, bk);
+  $('#tPack').onclick = () => showPack(() => showTitle(S || saved));
+}
+/** Import d'une partie : rien n'est écrit tant que le code n'a pas été vérifié et confirmé. */
+function showImport(current, from) {
+  const ov = $('#overlay'); ov.className = 'show title'; let found = null;
+  const back = () => (from === 'settings' ? showSettings() : showTitle(current));
+  ov.innerHTML = `<div class="titleBox set"><h2>Importer une partie</h2>
+    <p>Colle le code <b>MILIFE1.…</b> copié depuis l’autre version du jeu, ou choisis le fichier de sauvegarde.</p>
+    <textarea id="iCode" rows="4" placeholder="MILIFE1.…" autocomplete="off" spellcheck="false"></textarea>
+    <label class="ghost filebtn">📄 Choisir un fichier de sauvegarde<input type="file" id="iFile" hidden></label>
+    <p class="msg" id="iMsg" role="alert"></p><div id="iPrev"></div>
+    <button class="primary" id="iCheck">Vérifier ce code</button>
+    <button class="ghost" id="iBack">Retour</button></div>`;
+  const msg = (t, ok) => { const m = $('#iMsg'); m.textContent = t || ''; m.classList.toggle('ok', !!ok); };
+  $('#iBack').onclick = back;
+  $('#iCode').oninput = () => { found = null; $('#iPrev').innerHTML = ''; $('#iCheck').style.display = ''; msg(''); };
+  $('#iFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { $('#iCode').value = String(r.result || '').trim(); $('#iCode').oninput(); check(); }; r.onerror = () => msg('Impossible de lire ce fichier.'); r.readAsText(f); };
+  const check = () => {
+    try { found = Save.decodeCode($('#iCode').value); } catch (e) { found = null; $('#iPrev').innerHTML = ''; return msg(e.message); }
+    msg('Code valide.', true); $('#iCheck').style.display = 'none';
+    const older = current && current.meta && found.meta.gameId === current.meta.gameId && found.meta.rev < current.meta.rev;
+    $('#iPrev').innerHTML = `<div class="prev"><b>Partie trouvée : ${saveLabel(found)}</b><small>${saveDetail(found)}${found.meta.updatedAt ? ' · enregistrée le ' + new Date(found.meta.updatedAt).toLocaleString('fr-FR') : ''}</small></div>` +
+      (current ? `<div class="prev warn"><b>Elle remplacera la partie de cet appareil : ${saveLabel(current)}</b><small>${saveDetail(current)}. Une copie de secours est gardée ici, et tu peux aussi l’emporter.</small>${older ? '<small>⚠️ Le code importé est plus ancien que la partie actuelle.</small>' : ''}
+        <div class="row"><button class="ghost" id="iCopyCur">📋 Copier son code</button><button class="ghost" id="iDlCur">💾 La télécharger</button></div></div>` : '') +
+      `<button class="primary" id="iGo">${current ? 'Remplacer et jouer' : 'Jouer cette partie'}</button>`;
+    if (current) {
+      $('#iCopyCur').onclick = async () => msg(await copyText(Save.exportCode(current)) ? 'Code de la partie actuelle copié.' : 'Copie impossible ici : utilise « La télécharger ».', true);
+      $('#iDlCur').onclick = () => msg(downloadText(saveFileName(current), Save.exportCode(current)) ? 'Fichier de la partie actuelle téléchargé.' : 'Téléchargement impossible.', true);
+    }
+    $('#iGo').onclick = () => {
+      if (current && !Save.backup(current, 'import') && !$('#iGo').dataset.sure) { $('#iGo').dataset.sure = 1; $('#iGo').textContent = 'Remplacer quand même'; return msg('La copie de secours n’a pas pu être écrite (stockage plein ou bloqué). Copie ou télécharge d’abord la partie actuelle.'); }
+      if (!Save.write(found, 'import')) return msg('Échec de l’enregistrement : ce navigateur refuse de stocker la partie (stockage plein, navigation privée ou réglage bloqué). Rien n’a été remplacé.');
+      sfx('fanfare'); startGame(found); toast(`Partie importée · ${saveLabel(found)}`);
+    };
+  };
+  $('#iCheck').onclick = check;
+}
+function showRestore(current, bk) {
+  const ov = $('#overlay'); ov.className = 'show title';
+  ov.innerHTML = `<div class="titleBox set"><h2>Restaurer la partie précédente</h2>
+    <div class="prev"><b>Copie de secours : ${saveLabel(bk.state)}</b><small>${saveDetail(bk.state)} · gardée le ${new Date(bk.at).toLocaleString('fr-FR')}</small></div>
+    ${current ? `<div class="prev warn"><b>Partie actuelle : ${saveLabel(current)}</b><small>Elle deviendra à son tour la copie de secours.</small></div>` : ''}
+    <p class="msg" id="rMsg" role="alert"></p>
+    <button class="primary" id="rGo">Restaurer</button><button class="ghost" id="rBack">Retour</button></div>`;
+  $('#rBack').onclick = () => showTitle(current);
+  $('#rGo').onclick = () => {
+    const st = Save.migrate(JSON.parse(JSON.stringify(bk.state)));
+    if (current) Save.backup(current, 'restore');
+    if (!Save.write(st, 'restore')) { $('#rMsg').textContent = 'Échec de l’enregistrement : stockage plein ou bloqué. Rien n’a été modifié.'; return; }
+    startGame(st); toast(`Partie restaurée · ${saveLabel(st)}`);
   };
 }
 function showSettings() {
   const ov = $('#overlay'); ov.className = 'show title';
   ov.innerHTML = `<div class="titleBox set"><h2>Sauvegarde et réglages</h2>
-    <p>Sauvegarde automatique sur ce téléphone, après chaque action. Dernière écriture : ${new Date(S.meta.updatedAt).toLocaleString('fr-FR')}.</p>
+    <p>${Save.storageOk ? 'Sauvegarde automatique sur cet appareil, après chaque action.' : '⚠️ <b>La dernière sauvegarde a échoué</b> : ce navigateur refuse de stocker la partie. Copie ou télécharge le code ci-dessous pour ne rien perdre.'} Dernière écriture : ${new Date(S.meta.updatedAt).toLocaleString('fr-FR')}.</p>
     <button class="ghost" id="sSound">${MUTED ? '🔇 Son coupé' : '🔊 Son activé'}</button>
-    <label for="sCode">Code de la partie (pour la copier sur un autre téléphone)</label>
+    <label for="sCode">Code de la partie (pour la reprendre ailleurs : autre adresse, autre téléphone, nouvelle version)</label>
     <textarea id="sCode" rows="3" readonly>${Save.exportCode(S)}</textarea>
-    <div class="row"><button class="ghost" id="sCopy">Copier le code</button><button class="ghost" id="sImp">Importer un code</button></div>
+    <div class="row"><button class="ghost" id="sCopy">Copier le code</button><button class="ghost" id="sDl">Télécharger</button></div>
+    <button class="ghost" id="sImp">📥 Importer une partie</button>
+    <button class="ghost" id="sPack">📦 ${Pack.get() ? `Mes souvenirs : « ${esc(Pack.get().title)} » v${esc(Pack.get().version)}` : 'Installer mes souvenirs'}</button>
     <button class="ghost" id="sTitle">Retour à l’écran titre</button>
     <button class="primary" id="sClose">Fermer</button></div>`;
-  $('#sSound').onclick = () => { MUTED = !MUTED; $('#sSound').textContent = MUTED ? '🔇 Son coupé' : '🔊 Son activé'; };
-  $('#sCopy').onclick = async () => { const t = $('#sCode'); t.select(); try { await navigator.clipboard.writeText(t.value); toast('Code copié'); } catch (e) { toast('Sélectionne le texte et copie-le à la main'); } };
-  $('#sImp').onclick = () => {
-    const t = $('#sCode');
-    if (t.readOnly) { t.readOnly = false; t.value = ''; t.placeholder = 'Colle ici le code MILIFE1…'; t.focus(); $('#sImp').textContent = 'Charger ce code'; return; }
-    try { const st = Save.importCode(t.value); S = st; Save.write(S, 'import'); ov.className = ''; ov.innerHTML = ''; render(); toast('Partie importée'); } catch (e) { toast('Ce code n’est pas valide'); }
-  };
+  $('#sSound').onclick = () => { setMuted(!MUTED); $('#sSound').textContent = MUTED ? '🔇 Son coupé' : '🔊 Son activé'; };
+  $('#sCopy').onclick = async () => { const t = $('#sCode'); t.select(); toast(await copyText(t.value) ? 'Code copié' : 'Sélectionne le texte et copie-le à la main'); };
+  $('#sDl').onclick = () => toast(downloadText(saveFileName(S), Save.exportCode(S)) ? 'Sauvegarde téléchargée' : 'Téléchargement impossible : copie le code');
+  $('#sImp').onclick = () => { commit('settings'); showImport(S, 'settings'); };
+  $('#sPack').onclick = () => showPack(showSettings);
   $('#sTitle').onclick = () => { commit('title'); showTitle(S); };
-  $('#sClose').onclick = () => { ov.className = ''; ov.innerHTML = ''; };
+  $('#sClose').onclick = () => { ov.className = ''; ov.innerHTML = ''; render(); };
 }
 
 /* ---------- Événements ---------- */
@@ -4027,6 +4572,10 @@ document.addEventListener('click', e => {
   if (d.note) return writeNote();
   if (d.readnote) return readNote();
   if (d.settings) return showSettings();
+  if (d.surprise) return d.surprise === '1' ? openSurprise() : playEpisode(d.surprise, false);
+  if (d.replay) return playEpisode(d.replay, true);
+  if (d.anniv) return playAnniv();
+  if (d.pack) return showPack(() => { $('#overlay').className = ''; $('#overlay').innerHTML = ''; render(); });
 });
 
 (async function boot() {
