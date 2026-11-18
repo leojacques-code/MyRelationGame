@@ -1,7 +1,7 @@
 /* Lance toutes les suites : node tests/run-all.js */
 const { spawnSync } = require('child_process'), path = require('path');
 let bad = 0;
-for (const f of ['test-sauvegarde.js', 'test-surprises.js', 'test-decor.js', 'test-mobile.js', 'test-pack-prive.js']) {
+for (const f of ['test-sauvegarde.js', 'test-surprises.js', 'test-decor.js', 'test-mobile.js', 'test-relecture.js', 'test-pack-prive.js']) {
   const p = path.join(__dirname, f);
   if (!require('fs').existsSync(p)) continue;
   console.log(`\n=== ${f} ===`);
