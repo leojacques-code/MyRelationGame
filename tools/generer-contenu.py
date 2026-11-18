@@ -411,7 +411,7 @@ ep("retrouver", "On se retrouvera", "🗝️", "2 minutes",
 PACK = {
   "format": "milife.pack", "schema": 1, "id": "petites-choses", "version": 2,
   "title": "Les petites choses",
-  "note": "Contenu intégré au jeu. Une surprise par jour réel, dans l’ordre.",
+  "note": "Contenu intégré au jeu. Une surprise par journée de jeu, dans l’ordre.",
   "items": {
     "sousbock": {"name": "Sous-bock de la Contrescarpe", "desc": "Une pinte à 15 h, pour rigoler. Puis la neige."},
     "bouleNeige": {"name": "Boule à neige", "desc": "Secoue-la : il neige, comme sur la route du retour."},

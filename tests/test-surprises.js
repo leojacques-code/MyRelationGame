@@ -1,6 +1,6 @@
-/* Étape 2 — mécanique des surprises (contenu intégré désactivé), simulation de dates, paquet fictif. */
+/* Étape 2 — mécanique des surprises (contenu intégré désactivé), journées de jeu, rappels réels et paquet fictif. */
 const fs = require('fs'), path = require('path');
-const { ROOT, serve, advance, launch, check, summary } = require('./lib');
+const { ROOT, serve, advance, nextGameDay, launch, check, summary } = require('./lib');
 const HTML = path.join(ROOT, 'index.html');
 const PACK = path.join(__dirname, 'fixtures', 'paquet-fictif.json'), PACK2 = path.join(__dirname, 'fixtures', 'paquet-fictif-v2.json');
 const ADV = fs.readFileSync(path.join(__dirname, 'fixtures', 'save-v1-avancee-fictive.txt'), 'utf8').trim();
@@ -23,7 +23,7 @@ const unlocked = s => s.daily.unlocked.map(u => u.id).join(',');
   const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('http://127.0.0.1:8821/'); await page.waitForSelector('#overlay.title'); await fast(page);
 
-  console.log('Sans paquet : les post-its d’origine, un par jour réel');
+  console.log('Sans paquet : les post-its d’origine, un par journée de jeu');
   await page.click('#tNew'); await advance(page); await page.waitForTimeout(50);
   let s = await st(page);
   check(unlocked(s) === 'mot:0' && s.counters.mots === 1, 'jour 1 : premier post-it distribué');
@@ -34,25 +34,26 @@ const unlocked = s => s.daily.unlocked.map(u => u.id).join(',');
   await tab(page, 'day'); await page.click('[data-readnote="auto"]'); await advance(page);
   s = await st(page); check(s.notes.find(n => n.auto).read && !s.notes.find(n => !n.auto).read, 'lecture du post-it marquée ; le post-it manuel reste en attente');
   await page.clock.setSystemTime(at('2026-11-19T09:00:00')); await reload(page); s = await st(page);
-  check(unlocked(s) === 'mot:0,mot:1' && s.counters.mots === 2, 'lendemain : post-it suivant, même avec un post-it manuel en attente');
-  await page.clock.setSystemTime(at('2026-11-23T09:00:00')); await reload(page); s = await st(page);
-  check(unlocked(s) === 'mot:0,mot:1', 'retour après 4 jours avec la surprise non lue : pas d’empilement');
+  check(unlocked(s) === 'mot:0', 'nouvelle date réelle : aucune surprise tant que le jour de jeu ne change pas');
+  await nextGameDay(page); s = await st(page);
+  check(unlocked(s) === 'mot:0,mot:1' && s.counters.mots === 2, 'journée suivante : post-it suivant, même avec un post-it manuel en attente');
+  await nextGameDay(page); await reload(page); s = await st(page);
+  check(unlocked(s) === 'mot:0,mot:1', 'journée suivante avec la surprise non lue : pas d’empilement');
   await tab(page, 'day'); await page.click('[data-readnote="auto"]'); await advance(page);
-  await page.clock.setSystemTime(at('2026-11-23T23:59:20')); await page.clock.fastForward('02:00'); await page.waitForTimeout(100);
-  s = await st(page); check(unlocked(s) === 'mot:0,mot:1,mot:2', 'onglet laissé ouvert à minuit : la surprise arrive');
+  s = await st(page); check(unlocked(s) === 'mot:0,mot:1,mot:2', 'après lecture du post-it en attente : la surprise de la journée arrive');
 
   console.log('Paquet fictif : installation, épisodes, report, objets, souvenirs');
   await tab(page, 'day'); await page.click('[data-readnote="auto"]'); await advance(page);
   const prev = await installPack(page, PACK);
   check(/3 épisodes/.test(prev), 'aperçu du paquet avant installation');
   s = await st(page); check(unlocked(s) === 'mot:0,mot:1,mot:2', 'installation le même jour : pas de deuxième surprise');
-  await page.clock.setSystemTime(at('2026-11-25T08:00:00')); await reload(page); s = await st(page);
+  await nextGameDay(page); s = await st(page);
   check(unlocked(s).endsWith('ep:test-parapluie') && s.counters.mots === 3, 'avec le paquet : l’épisode 1 passe avant les post-its (compteur intact)');
   await tab(page, 'day'); await page.click('[data-surprise="1"]');
   await advance(page, (t, o) => (o.some(x => /Plus tard/.test(x)) ? 1 : 0));
   s = await st(page); check(!(s.daily.ep['test-parapluie'] || {}).read, '« Plus tard » : l’épisode attend');
-  await page.clock.setSystemTime(at('2026-11-26T08:00:00')); await reload(page); s = await st(page);
-  check(unlocked(s).split(',').length === 4 && await page.isVisible('[data-surprise="1"]'), 'épisode en attente : toujours là le lendemain, rien d’autre');
+  await reload(page); s = await st(page);
+  check(unlocked(s).split(',').length === 4 && await page.isVisible('[data-surprise="1"]'), 'épisode en attente : toujours là après rechargement, rien d’autre');
   await page.click('[data-surprise="1"]');
   let quizTries = 0;
   await advance(page, (t, o) => { if (/couleur/.test(t)) return quizTries++ === 0 ? 0 : o.indexOf('Rouge'); return 0; });
@@ -72,8 +73,8 @@ const unlocked = s => s.daily.unlocked.map(u => u.id).join(',');
   await tab(page, 'album'); check(/Le parapluie fictif/.test(await page.textContent('#panel')), 'souvenir lisible dans l’album');
 
   console.log('Mot du jour, choix précédents, passage rapide');
-  await page.clock.setSystemTime(at('2026-11-27T08:00:00')); await reload(page); s = await st(page);
-  check(unlocked(s).endsWith('ep:test-mot'), 'épisode suivant le lendemain');
+  await nextGameDay(page); s = await st(page);
+  check(unlocked(s).endsWith('ep:test-mot'), 'épisode suivant à la nouvelle journée de jeu');
   await tab(page, 'day'); await page.click('[data-surprise="1"]');
   await advance(page, (t, o) => 0, 3);   // accroche + « Maintenant »
   const skip = page.locator('.skipBtn'); if (await skip.count()) await skip.click();
@@ -87,9 +88,9 @@ const unlocked = s => s.daily.unlocked.map(u => u.id).join(',');
   console.log('Mise à jour du paquet, puis reprise des post-its après le dernier épisode');
   const prev2 = await installPack(page, PACK2);
   check(/4 épisodes/.test(prev2) && /2 déjà lus, conservés/.test(prev2), 'version enrichie : épisodes lus conservés');
-  for (const [d, exp] of [['2026-11-28', 'ep:test-lettre'], ['2026-11-29', 'ep:test-bonus'], ['2026-11-30', 'mot:3']]) {
-    await page.clock.setSystemTime(at(d + 'T08:00:00')); await reload(page); s = await st(page);
-    check(unlocked(s).endsWith(exp), `${d} : ${exp}`);
+  for (const exp of ['ep:test-lettre', 'ep:test-bonus', 'mot:3']) {
+    await nextGameDay(page); s = await st(page);
+    check(unlocked(s).endsWith(exp), `jour ${s.day} : ${exp}`);
     await tab(page, 'day');
     if (exp.startsWith('ep')) { await page.click('[data-surprise="1"]'); await advance(page); }
     else { await page.click('[data-readnote="auto"]'); await advance(page); }
@@ -125,7 +126,7 @@ const unlocked = s => s.daily.unlocked.map(u => u.id).join(',');
   const first = await p2.evaluate(() => window.MiLife.UI.dlg && window.MiLife.UI.dlg.text);
   check(/En rangeant La maison/.test(first || ''), 'accroche adaptée au logement actuel (« ' + first + ' »)');
   await advance(p2);
-  await p2.clock.setSystemTime(at('2026-11-19T10:00:00')); await reload(p2);
+  await nextGameDay(p2);
   await tab(p2, 'day'); await p2.click('[data-surprise="1"]'); await advance(p2);
   s = await st(p2); const lg = await p2.evaluate(() => window.MiLife.UI.log.map(d => d.text).join(' | '));
   check(/Spécialité choisie dans la partie : pédiatrie/.test(lg), 'futur fictionnel : la spécialité déjà choisie est reprise');

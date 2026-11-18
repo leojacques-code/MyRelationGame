@@ -1,7 +1,7 @@
 /* Les 14 épisodes intégrés « Les petites choses », joués de bout en bout sans rien installer :
-   partie neuve et partie avancée (fictive), un par jour réel, objets, souvenirs, reprise des post-its. */
+   partie neuve et partie avancée (fictive), un par journée de jeu, objets, souvenirs, reprise des post-its. */
 const fs = require('fs'), path = require('path');
-const { ROOT, serve, advance, launch, check, summary } = require('./lib');
+const { ROOT, serve, advance, nextGameDay, launch, check, summary } = require('./lib');
 const ADV = fs.readFileSync(path.join(__dirname, 'fixtures', 'save-v1-avancee-fictive.txt'), 'utf8').trim();
 const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const pack = JSON.parse(src.slice(src.indexOf('const CONTENU_INTEGRE = ') + 24, src.indexOf(';\n/* </contenu> */')).replace(/<\\\//g, '</'));
@@ -11,11 +11,11 @@ async function reload(page) { await page.reload(); await page.waitForSelector('#
 async function tab(page, t) { await page.evaluate(t => { window.MiLife.UI.tab = t; window.MiLife.render(); }, t); }
 const day = n => new Date(Date.UTC(2026, 11, 1 + n, 8));
 
-async function playAll(page, label, pickFn) {
+async function playAll(page, pickFn) {
   const seen = []; let bad = [];
   page.on('console', () => {});
   for (let n = 0; n < pack.episodes.length + 1; n++) {
-    await page.clock.setSystemTime(day(n)); await reload(page);
+    if (n > 0) await nextGameDay(page);
     const s = await st(page), last = s.daily.unlocked[s.daily.unlocked.length - 1];
     if (!last || last.kind !== 'ep') break;
     await tab(page, 'day'); await page.click('[data-surprise="1"]');
@@ -47,7 +47,7 @@ async function playAll(page, label, pickFn) {
     check(await page.evaluate(() => window.MiLife.Pack.isBundled && window.MiLife.Pack.get().episodes.length === 14), 'contenu intégré présent sans rien installer (14 épisodes)');
     await setup(page);
     const s0 = await st(page); const mots0 = s0.counters.mots || 0;
-    const r = await playAll(page, label, pick);
+    const r = await playAll(page, pick);
     const s = await st(page);
     check(r.seen.join() === pack.episodes.map(e => e.id).join(), 'les 14 épisodes, un par jour, dans l’ordre');
     check(pack.episodes.every(e => (s.daily.ep[e.id] || {}).read), 'tous marqués lus');
@@ -70,8 +70,8 @@ async function playAll(page, label, pickFn) {
     await page.reload(); await page.waitForSelector('#tNew'); await fast(page);
     check(await page.evaluate(() => window.MiLife.Pack.isBundled), 'un paquet stocké plus ancien est remplacé par le contenu intégré');
     await page.click('#tNew'); await advance(page);
-    await page.evaluate(() => { const S = window.MiLife.state; for (const id of ['voisine', 'pinte']) { if (!S.daily.unlocked.some(u => u.id === 'ep:' + id)) S.daily.unlocked.push({ id: 'ep:' + id, day: '2026-11-30', kind: 'ep' }); S.daily.ep[id] = { read: true, answers: {}, items: id === 'pinte' ? { sousbock: '2026-11-30' } : {}, plays: 1 }; S.memories.push({ day: 1, icon: '🍺', ref: 'pack:' + id, title: '', text: '' }); } S.items.push({ id: 'sousbock', owner: 'leonore', day: 1, stored: true }); S.daily.lastDay = '2026-11-30'; window.MiLife.Save.write(S, 't'); });
-    await page.clock.setSystemTime(day(1)); await reload(page);
+    await page.evaluate(() => { const S = window.MiLife.state; for (const id of ['voisine', 'pinte']) { if (!S.daily.unlocked.some(u => u.id === 'ep:' + id)) S.daily.unlocked.push({ id: 'ep:' + id, day: '2026-11-30', kind: 'ep' }); S.daily.ep[id] = { read: true, answers: {}, items: id === 'pinte' ? { sousbock: '2026-11-30' } : {}, plays: 1 }; S.memories.push({ day: 1, icon: '🍺', ref: 'pack:' + id, title: '', text: '' }); } S.items.push({ id: 'sousbock', owner: 'leonore', day: 1, stored: true }); S.daily.lastDay = '2026-11-30'; delete S.daily.lastGameDay; window.MiLife.Save.write(S, 't'); });
+    await reload(page); await nextGameDay(page);
     let s = await st(page);
     check(s.daily.unlocked[s.daily.unlocked.length - 1].id === 'ep:cuvette', 'la série reprend au premier épisode non lu');
     await page.evaluate(() => { window.MiLife.UI.tab = 'album'; window.MiLife.render(); }); await page.click('[data-replay="pinte"]'); await advance(page);

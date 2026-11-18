@@ -52,6 +52,12 @@ async function advance(page, pickFn, max) {
   throw new Error('advance: trop d’étapes');
 }
 
+async function nextGameDay(page) {
+  await page.evaluate(() => { window.MiLife.UI.tab = 'day'; window.MiLife.render(); });
+  await page.locator('[data-end="1"]').click();
+  await advance(page, (text, opts) => text.includes('On passe à demain') ? opts.indexOf('Oui, au lit') : 0);
+}
+
 async function launch(opts) {
   const browser = await chromium.launch();
   return browser;
@@ -64,4 +70,4 @@ function check(cond, msg) {
 }
 function summary() { console.log(`\n${passes} vérifications réussies, ${failures} échec(s).`); return failures; }
 
-module.exports = { ROOT, serve, advance, launch, check, summary };
+module.exports = { ROOT, serve, advance, nextGameDay, launch, check, summary };
