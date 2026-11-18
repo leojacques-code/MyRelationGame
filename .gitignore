@@ -1,0 +1,12 @@
+# Contenus privés : ne JAMAIS les suivre dans ce dépôt public
+prive/
+private/
+milife-paquet-*.json
+*.milife-pack.json
+*.m4a
+*.mp3
+*.wav
+*.ogg
+# Sauvegardes de parties réelles (codes MILIFE1 exportés)
+mi-life-sauvegarde-*.txt
+*.milife-save*

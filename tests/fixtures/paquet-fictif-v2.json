@@ -1,0 +1,245 @@
+{
+ "format": "milife.pack",
+ "schema": 1,
+ "id": "paquet-fictif",
+ "version": 2,
+ "title": "Paquet de test (fictif)",
+ "note": "Contenu inventé pour les tests automatiques. Aucun souvenir réel ici.",
+ "items": {
+  "sousbock": {
+   "name": "Sous-bock du café imaginaire",
+   "desc": "Objet de test, fictif."
+  }
+ },
+ "anniversaries": [
+  {
+   "id": "test-anniv",
+   "m": 3,
+   "d": 14,
+   "label": "Un rappel fictif",
+   "steps": [
+    {
+     "t": "sms",
+     "who": "leo",
+     "text": "rappel de test. tout est inventé"
+    }
+   ]
+  }
+ ],
+ "episodes": [
+  {
+   "id": "test-parapluie",
+   "title": "Le parapluie fictif",
+   "icon": "☂️",
+   "teaser": "1 minute",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "mathys",
+       "text": "y a un parapluie qui traîne. il est à qui"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "En rangeant {home}, un parapluie tombe d’une étagère."
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ]
+    },
+    {
+     "t": "narr",
+     "text": "Scène inventée pour les tests. Il pleut, il y a un parapluie, personne ne sait à qui il est."
+    },
+    {
+     "t": "choice",
+     "key": "reaction",
+     "prompt": "Tu réagis comment ?",
+     "options": [
+      {
+       "label": "Rire",
+       "value": "rire",
+       "then": [
+        {
+         "t": "say",
+         "who": "leo",
+         "text": "Ok, je l’ai mérité."
+        }
+       ]
+      },
+      {
+       "label": "Le garder",
+       "value": "garder",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Il est à toi maintenant."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "quiz",
+     "prompt": "Quelle couleur avait le parapluie ?",
+     "answer": 1,
+     "options": [
+      {
+       "label": "Vert",
+       "hint": "Non, pas vert. Pense à quelque chose de vif."
+      },
+      {
+       "label": "Rouge"
+      },
+      {
+       "label": "Bleu"
+      }
+     ],
+     "win": "Rouge, oui.",
+     "reveal": "Il était rouge."
+    },
+    {
+     "t": "item",
+     "id": "sousbock",
+     "text": "Un sous-bock fictif rejoint ton inventaire."
+    },
+    {
+     "t": "memory",
+     "icon": "☂️"
+    }
+   ],
+   "memory": {
+    "icon": "☂️",
+    "title": "Le parapluie fictif",
+    "text": "Souvenir inventé pour les tests."
+   }
+  },
+  {
+   "id": "test-mot",
+   "title": "Le mot fictif",
+   "icon": "🔤",
+   "hook": [
+    {
+     "t": "sms",
+     "who": "leo",
+     "text": "j’ai caché un mot. un mot de test"
+    }
+   ],
+   "steps": [
+    {
+     "t": "motus",
+     "word": "TESTE",
+     "caption": "Un mot de test.",
+     "after": "Le souvenir se révèle, trouvé ou pas."
+    },
+    {
+     "t": "recall",
+     "from": "test-parapluie",
+     "key": "reaction",
+     "texts": {
+      "rire": "(Tu avais ri, au premier épisode.)"
+     }
+    },
+    {
+     "t": "if",
+     "cond": {
+      "flag": "specialty"
+     },
+     "then": [
+      {
+       "t": "narr",
+       "text": "Spécialité choisie dans la partie : {specialty}."
+      }
+     ],
+     "else": [
+      {
+       "t": "narr",
+       "text": "Pas encore de spécialité choisie : tout reste ouvert."
+      }
+     ]
+    },
+    {
+     "t": "memory",
+     "icon": "🔤"
+    }
+   ],
+   "memory": {
+    "icon": "🔤",
+    "title": "Le mot fictif",
+    "text": "Souvenir inventé pour les tests."
+   }
+  },
+  {
+   "id": "test-lettre",
+   "title": "La lettre fictive",
+   "icon": "💌",
+   "hook": [
+    {
+     "t": "narr",
+     "text": "Une enveloppe fictive sur la table."
+    }
+   ],
+   "steps": [
+    {
+     "t": "tap",
+     "prompt": "Ouvre l’enveloppe",
+     "count": 3,
+     "emoji": "✉️"
+    },
+    {
+     "t": "letter",
+     "title": "Lettre de test",
+     "text": "Texte inventé, pour vérifier l’affichage d’une lettre.",
+     "sign": "— personne"
+    },
+    {
+     "t": "memory",
+     "icon": "💌"
+    }
+   ],
+   "memory": {
+    "icon": "💌",
+    "title": "La lettre fictive",
+    "text": "Souvenir inventé pour les tests."
+   }
+  },
+  {
+   "id": "test-bonus",
+   "title": "L’épisode ajouté",
+   "icon": "➕",
+   "hook": [
+    {
+     "t": "narr",
+     "text": "Un épisode ajouté dans la version 2 du paquet fictif."
+    }
+   ],
+   "steps": [
+    {
+     "t": "narr",
+     "text": "Rien de réel ici."
+    },
+    {
+     "t": "memory",
+     "icon": "➕"
+    }
+   ],
+   "memory": {
+    "icon": "➕",
+    "title": "L’épisode ajouté",
+    "text": "Fictif."
+   }
+  }
+ ]
+}
