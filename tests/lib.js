@@ -33,7 +33,8 @@ async function advance(page, pickFn, max) {
     });
     if (/daycard/.test(st.ov)) { await page.click('#overlay'); continue; }
     if (/credits/.test(st.ov)) { await page.click('#crGo'); continue; }
-    if (/(^| )show($| )/.test(st.ov) && document) { /* mini-jeu : Mini.fast le court-circuite */ }
+    if (/letter/.test(st.ov)) { await page.click('#ltGo'); continue; }
+    if (/tapm/.test(st.ov)) { await page.click('#tapSkip'); continue; }
     if (!st.dlg) { if (!st.busy) return; await page.waitForTimeout(30); continue; }
     if (st.dlg.opts) {
       const i = pickFn ? pickFn(st.dlg.text, st.dlg.opts) : 0;
@@ -47,6 +48,7 @@ async function advance(page, pickFn, max) {
       await page.click('#dlg');
     }
   }
+  if (max) return;
   throw new Error('advance: trop d’étapes');
 }
 

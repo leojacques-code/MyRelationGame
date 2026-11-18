@@ -3467,14 +3467,14 @@ Object.assign(Mini, {
   /* ---------- Le mot du jour : Motus, première lettre offerte ---------- */
   /* fixed = {word, cap} pour une surprise ; sinon, le mot du jour reste le même toute la journée réelle */
   motus(fixed) {
-    if (Mini.fast) return Promise.resolve({ score: 5 });
+    let word, cap;
+    if (fixed && fixed.word) { word = fixed.word; cap = fixed.cap || ''; }
+    else {
+      const day = todayKey(); if (S.counters.motusDay !== day) { S.counters.motusDay = day; S.counters.motusIdx = S.counters.motus || 0; S.counters.motus = (S.counters.motus || 0) + 1; }
+      [word, cap] = MOTS[(S.counters.motusIdx || 0) % MOTS.length];
+    }
+    if (Mini.fast) return Promise.resolve({ score: 5, word });
     return new Promise(res => {
-      let word, cap;
-      if (fixed && fixed.word) { word = fixed.word; cap = fixed.cap || ''; }
-      else {
-        const day = todayKey(); if (S.counters.motusDay !== day) { S.counters.motusDay = day; S.counters.motusIdx = S.counters.motus || 0; S.counters.motus = (S.counters.motus || 0) + 1; }
-        [word, cap] = MOTS[(S.counters.motusIdx || 0) % MOTS.length];
-      }
       const L = word.length, TRIES = 6;
       const ov = mgOpen('Le mot du jour', `Un mot de ${L} lettres qui parle de nous. La première lettre est offerte. Vert : bien placée. Jaune : dans le mot, mais ailleurs.`,
         `<div class="motus"><div class="mtG" id="mtG" style="--n:${L}"></div><div class="mtK" id="mtK"></div></div>`, '🔤');
@@ -3895,7 +3895,7 @@ async function playAnniv() {
 }
 async function openSurprise() {
   const p = pendingSurprise(); if (!p || UI.busy) return;
-  if (p.kind === 'mot') { if (S.active !== 'leonore') { S.active = 'leonore'; renderTop(); } return readNote(); }
+  if (p.kind === 'mot') return readNote('auto');
   return playEpisode(p.id, false);
 }
 
@@ -3914,7 +3914,7 @@ function tpl(t, ctx) {
 function condOk(c, ctx) {
   if (!c) return true;
   if (c.flag) return !!S.flags[c.flag] && (c.eq === undefined || S.flags[c.flag] === c.eq);
-  if (c.answer) { const v = ctx.st.answers[c.answer]; return c.eq === undefined ? v != null : v === c.eq; }
+  if (c.answer) { const v = (c.from ? (S.daily.ep[c.from] || { answers: {} }).answers : ctx.st.answers)[c.answer]; return c.eq === undefined ? v != null : v === c.eq; }
   if (c.stageMin != null) return S.stage >= c.stageMin;
   if (c.read) return !!(S.daily.ep[c.read] || {}).read;
   return true;
@@ -3940,8 +3940,9 @@ async function runStep(s, ctx) {
       }
       return runSteps(o.then, ctx);
     }
-    case 'recall': {
-      const h = ctx.st.answers[s.key + '_all'], prev = s.previous ? (h && h.length > 1 ? h[h.length - 2] : undefined) : ctx.st.answers[s.key];
+    case 'recall': {   // rappelle un choix : de cet épisode, ou d'un autre (from)
+      const src = s.from ? (S.daily.ep[s.from] || { answers: {} }).answers : ctx.st.answers;
+      const h = src[s.key + '_all'], prev = s.previous ? (h && h.length > 1 ? h[h.length - 2] : undefined) : src[s.key];
       if (prev !== undefined && s.texts && s.texts[prev]) return narr(T(s.texts[prev]));
       if (prev === undefined && s.none) return narr(T(s.none));
       return;
@@ -4337,10 +4338,11 @@ async function writeNote() {
     await narr(`Collé sur le frigo, à hauteur d’yeux. ${PEOPLE[o].name} le verra quand ce sera son tour.`);
   }, 'note');
 }
-async function readNote() {
+async function readNote(kind) {
   if (UI.busy) return;
-  let n = (S.notes || []).find(n => n.from !== S.active && !n.read);
-  if (!n) { n = (S.notes || []).find(n => n.from === S.active && !n.read); if (!n) return; S.active = other(n.from); renderTop(); }
+  const ok = n => !n.read && (kind === 'auto' ? n.auto : !n.auto);
+  let n = (S.notes || []).find(n => n.from !== S.active && ok(n));
+  if (!n) { n = (S.notes || []).find(ok); if (!n) return; S.active = other(n.from); renderTop(); }
   const a = S.active;
   await run(async () => {
     UI.slug = 'SUR LE FRIGO'; n.read = true;
@@ -4666,8 +4668,9 @@ function renderPanel() {
     const ps = pendingSurprise(), pa = pendingAnniv();
     if (pa) h += `<button class="act surp" data-anniv="1"><span class="ic">📅</span><span class="tx"><b>${esc(pa.a.label || 'Un rappel, aujourd’hui')}</b><i>Un petit mot pour la date · quelques secondes</i></span></button>`;
     if (ps && ps.kind === 'ep') { const ep = Pack.episode(ps.id), st = S.daily.ep[ps.id] || {}; h += `<button class="act surp" data-surprise="1"><span class="ic">${esc(ep.icon || '🎁')}</span><span class="tx"><b>La surprise du jour${st.opened ? ' · à finir' : ''}</b><i>Pour Léonore · ${esc(ep.teaser || '1 à 3 minutes')} · ne prend pas de moment</i></span></button>`; }
-    const nt = (S.notes || []).find(n => n.from !== a && !n.read) || (ps && ps.kind === 'mot' ? ps.note : null);
-    if (nt) h += `<button class="act mail note" data-readnote="1"><span class="ic">💌</span><span class="tx"><b>${nt.auto ? 'La surprise du jour : un mot sur le frigo' : 'Un mot sur le frigo'}</b><i>De la part de ${nt.from === 'leo' ? nkO() : nkL()}. Un vrai.</i></span></button>`;
+    if (ps && ps.kind === 'mot') h += `<button class="act mail note surp" data-readnote="auto"><span class="ic">💌</span><span class="tx"><b>La surprise du jour : un mot sur le frigo</b><i>De la part de ${nkO()} · quelques secondes · ne prend pas de moment</i></span></button>`;
+    const nt = (S.notes || []).find(n => n.from !== a && !n.read && !n.auto);
+    if (nt) h += `<button class="act mail note" data-readnote="1"><span class="ic">💌</span><span class="tx"><b>Un mot sur le frigo</b><i>De la part de ${nt.from === 'leo' ? nkO() : nkL()}. Un vrai.</i></span></button>`;
     const ft = feteToday();
     if (ft) h += `<button class="act fete" data-fete="1"><span class="ic">${ft.ic}</span><span class="tx"><b>${ft.name}</b><i>C’est aujourd’hui, ${dateLabel(S.date)}. Tout le monde vous attend. Ne prend pas de moment.</i></span></button>`;
     if (S.flags.justMoved != null) h += `<button class="act duo" data-decor="1"><span class="ic">📦</span><span class="tx"><b>Vos objets ont suivi</b><i>Ouvre 🎨 Décorer pour les réinstaller. L’ancien logement est gardé en mémoire.</i></span></button>`;
@@ -4924,7 +4927,7 @@ document.addEventListener('click', e => {
   if (d.party) return party();
   if (d.mail) return readMail();
   if (d.note) return writeNote();
-  if (d.readnote) return readNote();
+  if (d.readnote) return readNote(d.readnote);
   if (d.settings) return showSettings();
   if (d.surprise) return d.surprise === '1' ? openSurprise() : playEpisode(d.surprise, false);
   if (d.replay) return playEpisode(d.replay, true);
