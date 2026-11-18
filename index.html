@@ -361,6 +361,22 @@ textarea#dlgInput{width:100%;box-sizing:border-box;font:inherit;font-family:'Cou
 .mtK div{display:flex;gap:4px;justify-content:center;margin-top:5px}.mtK button{flex:1;max-width:36px;min-height:46px;border:0;border-radius:8px;background:#e7dfcf;font-weight:800;font-size:15px;color:var(--ink);padding:0}
 .mtK button.wide{max-width:58px;flex:1.6;background:var(--ink);color:#fff}.mtK button.ok{background:#3f8f5f;color:#fff}.mtK button.mid{background:#e0a21a;color:#fff}.mtK button.no{background:#b9bcc7;color:#fff}
 #tabs{padding-bottom:env(safe-area-inset-bottom)}
+/* décor */
+#decoBtn{position:absolute;left:8px;bottom:8px;border:0;border-radius:999px;min-height:36px;padding:6px 12px;font-weight:800;font-size:12.5px;background:#ffffffe6;color:var(--ink);box-shadow:0 2px 0 #0002}
+#decoBtn[hidden]{display:none}
+#roomTabs{max-width:calc(100% - 110px);flex-wrap:wrap;justify-content:flex-end}
+body.decormode #scene{touch-action:none}
+body.decormode #roomTabs{display:none}
+body.decormode #sceneWrap{box-shadow:inset 0 0 0 3px var(--gold)}
+#scene .zone{fill:#e9c46a33;stroke:#e9c46a;stroke-width:2;stroke-dasharray:5 4}
+#scene .dragging{opacity:.8}
+.decoBar{position:sticky;top:-12px;z-index:3;background:var(--paper);padding:6px 0}
+.decoMsg{margin:0;background:#eef6ee;border:1.5px solid #b9dcc6;border-radius:12px;padding:8px 10px;font-size:13.5px;font-weight:700}.decoMsg.bad{background:#fdecea;border-color:#f0a59d}
+.tip.decoSel{display:flex;gap:10px;align-items:center}.tip.decoSel .thumb{width:44px;height:44px;flex:none;background:#fff;border-radius:10px}.tip.decoSel span{flex:1;font-size:13.5px}.tip.decoSel button{min-height:40px}
+.item.inv{flex-wrap:wrap}.item.inv.sel{border-color:var(--gold);box-shadow:0 0 0 3px #e9c46a66}.item.inv.stored .thumb,.item.inv.full .thumb{opacity:.55}
+.invB{display:flex;flex-direction:column;gap:5px}.invB button{min-width:92px;min-height:40px}.item.inv .vars{flex-basis:100%;margin:2px 0 0 64px;flex-wrap:nowrap;overflow-x:auto}.item.inv .vars .chip{flex:none}.invB button.sec{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.item .chip{min-width:0;min-height:34px;background:#fff;color:var(--ink);border:1.5px solid var(--line);border-radius:999px;font-size:12px;font-weight:700}.item .chip.on{background:var(--ink);color:#fff}
+.chips.mini{margin-top:6px;gap:5px}.chips.mini .chip{min-height:34px;padding:3px 9px;font-size:12px}
 /* surprises */
 .act.surp{border-color:#e7b3c4;background:#fdf3f6;box-shadow:0 2px 0 #e7b3c4}
 .tip.warnTip{background:#fdecea;border-color:var(--door)}
@@ -396,6 +412,7 @@ textarea#dlgInput{width:100%;box-sizing:border-box;font:inherit;font-family:'Cou
     <svg id="scene" viewBox="0 0 360 300" role="img" aria-label="Décor de la scène"></svg>
     <div id="sceneTitle"></div>
     <div id="roomTabs"></div>
+    <button id="decoBtn" data-decor="1" aria-label="Décorer le logement">🎨 Décorer</button>
     <div id="bubble" role="status"></div>
   </div>
   <main id="panel"></main>
@@ -874,8 +891,8 @@ function pet(kind, x, y, s) {
 
 /* ---------- Objets achetables (dessin ancré en bas au centre, ou au centre pour les murs) ---------- */
 const ITEM_ART = {
-  plante: (x, y) => `<g transform="translate(${x},${y})"><path d="M-7,0 L-9,-14 L9,-14 L7,0Z" fill="#c8693f"/><path d="M0,-14 q-14,-10 -12,-26 q10,6 12,26 M0,-14 q14,-12 13,-30 q-11,8 -13,30 M0,-14 q-2,-20 2,-38 q5,18 -2,38" fill="#3f8f5f" stroke="#2f6f48" stroke-width=".8"/></g>`,
-  guirlande: () => { let s = `<path d="M6,10 Q90,34 180,14 Q270,34 354,10" fill="none" stroke="#6b5a48" stroke-width="1.2"/>`; for (let i = 0; i < 12; i++) { const t = i / 11, x = 14 + t * 332, y = 14 + Math.sin(t * Math.PI * 2) ** 2 * 11; s += `<circle class="bulb" cx="${x.toFixed(1)}" cy="${(y + 4).toFixed(1)}" r="3.2" fill="${['#ffd76a', '#ff9f6a', '#ffe9a8'][i % 3]}"/>`; } return s; },
+  plante: (x, y, v) => `<g transform="translate(${x},${y})"><path d="M-7,0 L-9,-14 L9,-14 L7,0Z" fill="${v || '#c8693f'}" stroke="#0002"/><path d="M0,-14 q-14,-10 -12,-26 q10,6 12,26 M0,-14 q14,-12 13,-30 q-11,8 -13,30 M0,-14 q-2,-20 2,-38 q5,18 -2,38" fill="#3f8f5f" stroke="#2f6f48" stroke-width=".8"/></g>`,
+  guirlande: (x, y, v, off) => { let s = `<path d="M6,10 Q90,34 180,14 Q270,34 354,10" fill="none" stroke="#6b5a48" stroke-width="1.2"/>`; for (let i = 0; i < 12; i++) { const t = i / 11, x = 14 + t * 332, y = 14 + Math.sin(t * Math.PI * 2) ** 2 * 11; s += `<circle class="${off ? '' : 'bulb'}" cx="${x.toFixed(1)}" cy="${(y + 4).toFixed(1)}" r="3.2" fill="${off ? '#d9d4c8' : ['#ffd76a', '#ff9f6a', '#ffe9a8'][i % 3]}"/>`; } return s + `<path d="M6,10 Q90,34 180,14 Q270,34 354,10" fill="none" stroke="transparent" stroke-width="16"/>`; },
   affiche: (x, y) => `<g transform="translate(${x},${y})"><rect x="-16" y="-23" width="32" height="46" fill="#1d2a4d" stroke="#f1e7d2" stroke-width="2"/><circle cx="6" cy="-10" r="6" fill="#ffd76a"/><path d="M-16,8 l8,-8 l7,6 l8,-10 l9,12 v15 h-32Z" fill="#d7352b"/><rect x="-11" y="13" width="22" height="3" fill="#f1e7d2"/><rect x="-7" y="18" width="14" height="2" fill="#f1e7d2" opacity=".7"/></g>`,
   squelette: (x, y) => `<g transform="translate(${x},${y})" stroke="#f5f1e6" stroke-linecap="round" fill="none"><rect x="-9" y="-3" width="18" height="3" fill="#555" stroke="none"/><path d="M0,-3 V-60" stroke="#666" stroke-width="1.5"/><circle cx="0" cy="-62" r="7" fill="#f5f1e6" stroke="#cfc8b6"/><circle cx="-2.5" cy="-63" r="1.6" fill="#333" stroke="none"/><circle cx="2.5" cy="-63" r="1.6" fill="#333" stroke="none"/><path d="M0,-54 V-30 M-8,-50 h16 M-7,-45 h14 M-6,-40 h12 M-5,-35 h10 M-8,-50 l-5,18 M8,-50 l5,18 M-4,-30 h8 M-4,-30 l-2,26 M4,-30 l2,26" stroke-width="2.2" stroke="#f5f1e6"/></g>`,
   stetho: (x, y) => `<g transform="translate(${x},${y})"><circle cx="0" cy="-18" r="2" fill="#777"/><path d="M-7,-16 Q-9,4 0,6 Q9,4 7,-16" fill="none" stroke="#2f3a4d" stroke-width="2.4" stroke-linecap="round"/><path d="M0,6 V14" stroke="#2f3a4d" stroke-width="2.4"/><circle cx="0" cy="18" r="4.5" fill="#c9d2da" stroke="#8f9aa5"/></g>`,
@@ -883,9 +900,9 @@ const ITEM_ART = {
   marteau: (x, y) => `<g transform="translate(${x},${y}) rotate(-25)"><rect x="-1" y="-20" width="2.4" height="20" fill="#9aa3ab"/><path d="M-7,-24 h14 l-3,6 h-8Z" fill="#d7352b"/></g>`,
   console: (x, y) => `<g transform="translate(${x},${y})"><rect x="-13" y="-7" width="26" height="7" rx="2" fill="#f2f2f2" stroke="#ccc"/><circle cx="8" cy="-3.5" r="1.2" fill="#3fbf6f"/><rect x="-22" y="-5" width="7" height="4" rx="2" fill="#e24b4b"/><rect x="15" y="-5" width="7" height="4" rx="2" fill="#3f8fe0"/></g>`,
   camera: (x, y) => `<g transform="translate(${x},${y})"><path d="M0,-34 L-11,0 M0,-34 L11,0 M0,-34 V-2" stroke="#3a3a3f" stroke-width="2.2" stroke-linecap="round"/><rect x="-12" y="-48" width="22" height="14" rx="2" fill="#2b2b30"/><rect x="10" y="-45" width="8" height="8" fill="#555"/><circle cx="-8" cy="-52" r="5" fill="#2b2b30"/><circle cx="2" cy="-52" r="5" fill="#2b2b30"/><circle cx="14" cy="-41" r="2.4" fill="#8fd0ff"/></g>`,
-  lampe: (x, y) => `<g transform="translate(${x},${y})"><circle cx="0" cy="-22" r="20" fill="#ffd76a" opacity=".22"/><path d="M-4,0 L-3,-14 h6 L4,0Z" fill="#f4efe6" stroke="#d8cfbd"/><path d="M-13,-14 Q0,-34 13,-14Z" fill="#f08a5d"/></g>`,
-  photo: (x, y) => `<g transform="translate(${x},${y})"><rect x="-15" y="-12" width="30" height="24" fill="#fff" stroke="#b98d5e" stroke-width="2.4"/><circle cx="-5" cy="1" r="5" fill="#f4d6b8"/><path d="M-10.5,2 Q-11,-6 -5,-6 Q1,-6 .5,2 L1,8 h-12Z" fill="#4b2f22" opacity=".9"/><circle cx="-5" cy="1.5" r="4" fill="#f4d6b8"/><circle cx="6" cy="1" r="4.6" fill="#f2cdae"/><path d="M1.6,0 Q2,-6 6,-6 Q10.5,-6 10.4,0 Q6,-3 1.6,0Z" fill="#3a2a20"/><path d="M0,-9 q-2,-3 0,-3 q2,0 0,3 q2,-3 0,-3" fill="#d7352b" stroke="#d7352b" stroke-width="1.4"/></g>`,
-  pouf: (x, y) => `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-7" rx="15" ry="9" fill="#e2a52e"/><path d="M-15,-7 q15,6 30,0" stroke="#b9831c" fill="none"/></g>`,
+  lampe: (x, y, v) => `<g transform="translate(${x},${y})"><circle cx="0" cy="-22" r="20" fill="#ffd76a" opacity=".22"/><path d="M-4,0 L-3,-14 h6 L4,0Z" fill="#f4efe6" stroke="#d8cfbd"/><path d="M-13,-14 Q0,-34 13,-14Z" fill="${v || '#f08a5d'}"/></g>`,
+  photo: (x, y, v) => `<g transform="translate(${x},${y})"><rect x="-15" y="-12" width="30" height="24" fill="#fff" stroke="${v || '#b98d5e'}" stroke-width="2.4"/><circle cx="-5" cy="1" r="5" fill="#f4d6b8"/><path d="M-10.5,2 Q-11,-6 -5,-6 Q1,-6 .5,2 L1,8 h-12Z" fill="#4b2f22" opacity=".9"/><circle cx="-5" cy="1.5" r="4" fill="#f4d6b8"/><circle cx="6" cy="1" r="4.6" fill="#f2cdae"/><path d="M1.6,0 Q2,-6 6,-6 Q10.5,-6 10.4,0 Q6,-3 1.6,0Z" fill="#3a2a20"/><path d="M0,-9 q-2,-3 0,-3 q2,0 0,3 q2,-3 0,-3" fill="#d7352b" stroke="#d7352b" stroke-width="1.4"/></g>`,
+  pouf: (x, y, v) => `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-7" rx="15" ry="9" fill="${v || '#e2a52e'}"/><path d="M-15,-7 q15,6 30,0" stroke="#0003" fill="none"/></g>`,
   cafe: (x, y) => `<g transform="translate(${x},${y})"><rect x="-8" y="-18" width="16" height="18" rx="2" fill="#2b2b30"/><rect x="-5" y="-9" width="10" height="7" fill="#555"/><rect x="-3" y="-6" width="6" height="5" rx="1" fill="#fff"/><circle cx="4" cy="-14" r="1.3" fill="#e24b4b"/></g>`,
   vinyle: (x, y) => `<g transform="translate(${x},${y})"><rect x="-13" y="-6" width="26" height="6" rx="1.5" fill="#b98d5e"/><ellipse cx="-2" cy="-7" rx="9" ry="2.6" fill="#111"/><ellipse cx="-2" cy="-7" rx="2.5" ry=".8" fill="#d7352b"/><path d="M9,-8 l-6,1" stroke="#ccc" stroke-width="1.2"/></g>`,
   aquarium: (x, y) => `<g transform="translate(${x},${y})"><rect x="-17" y="-18" width="34" height="18" fill="#6b5a48"/><rect x="-19" y="-44" width="38" height="26" rx="2" fill="#9fd8ef" stroke="#e9f6fb" stroke-width="2"/><path d="M-8,-30 l6,-3 v6Z M-8,-30 a4,3 0 1 0 -8,0 a4,3 0 1 0 8,0" fill="#f08a5d"/><path d="M10,-36 l-5,-2.5 v5Z M10,-36 a3.4,2.6 0 1 1 7,0 a3.4,2.6 0 1 1 -7,0" fill="#ffd76a"/><path d="M-12,-19 q2,-8 0,-12 M13,-19 q-3,-6 0,-10" stroke="#3f8f5f" stroke-width="2" fill="none"/></g>`,
@@ -906,22 +923,56 @@ const ITEM_ART = {
   nokia: (x, y) => `<g transform="translate(${x},${y})"><rect x="-4.500" y="-15" width="9" height="15" rx="2" fill="#2f4f8f"/><rect x="-3.200" y="-13.200" width="6.400" height="5" rx=".6" fill="#b9d98a"/><path d="M-3,-6.500 h6 M-3,-4.300 h6 M-3,-2.100 h6" stroke="#cfd8e3" stroke-width="1.100" stroke-dasharray="1.300 1"/></g>`,
   sanglier: (x, y) => `<g transform="translate(${x},${y})"><ellipse cx="0" cy="10" rx="13" ry="4" fill="#8d6a43"/><path d="M-11,-4 Q-12,-14 0,-14 Q12,-14 11,-4 Q9,9 0,10 Q-9,9 -11,-4Z" fill="#5a4332"/><path d="M-10,-11 l-4,-6 l7,3Z M10,-11 l4,-6 l-7,3Z" fill="#4a3628"/><ellipse cx="0" cy="3" rx="5.500" ry="4.200" fill="#7a5c46"/><circle cx="-2" cy="3" r="1" fill="#2a1c14"/><circle cx="2" cy="3" r="1" fill="#2a1c14"/><circle cx="-5" cy="-5" r="1.400" fill="#111"/><circle cx="5" cy="-5" r="1.400" fill="#111"/><path d="M-5.500,6 q-2,-4 -4,-3 M5.500,6 q2,-4 4,-3" stroke="#f4efe6" stroke-width="1.600" fill="none" stroke-linecap="round"/></g>`,
   flipper: (x, y) => `<g transform="translate(${x},${y})"><path d="M-14,0 v-18 M14,0 v-18" stroke="#333" stroke-width="3"/><path d="M-18,-18 L18,-18 L16,-34 L-16,-34Z" fill="#b23b3b" stroke="#7a2222"/><rect x="-15" y="-58" width="30" height="24" rx="2" fill="#27345c" stroke="#e9c46a" stroke-width="1.500"/><circle class="bulb" cx="-7" cy="-50" r="2.400" fill="#ffd76a"/><circle class="bulb" cx="6" cy="-46" r="2.400" fill="#ff9f6a"/><path d="M-9,-40 h18" stroke="#fff" stroke-width="1.200"/><circle cx="0" cy="-26" r="1.600" fill="#cfd8e3"/><path d="M-8,-22 l5,-2 M8,-22 l-5,-2" stroke="#fff" stroke-width="1.600" stroke-linecap="round"/></g>`,
-  super8: (x, y) => `<g transform="translate(${x},${y})"><rect x="-10" y="-12" width="20" height="12" rx="2" fill="#4a4a50"/><circle cx="-5" cy="-17" r="5" fill="#2b2b30" stroke="#777"/><circle cx="6" cy="-17" r="5" fill="#2b2b30" stroke="#777"/><rect x="10" y="-9" width="5" height="5" fill="#8fd0ff"/></g>`
+  super8: (x, y) => `<g transform="translate(${x},${y})"><rect x="-10" y="-12" width="20" height="12" rx="2" fill="#4a4a50"/><circle cx="-5" cy="-17" r="5" fill="#2b2b30" stroke="#777"/><circle cx="6" cy="-17" r="5" fill="#2b2b30" stroke="#777"/><rect x="10" y="-9" width="5" height="5" fill="#8fd0ff"/></g>`,
+  /* kit du coin */
+  coussin: (x, y, v) => `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1" rx="17" ry="4" fill="#0002"/><path d="M-16,-2 q-2,-12 4,-14 q12,-4 24,0 q6,2 4,14 q-16,5 -32,0Z" fill="${v || '#4d9d6b'}"/><path d="M-12,-9 q12,4 24,0" stroke="#0002" fill="none"/></g>`,
+  veilleuse: (x, y) => `<g transform="translate(${x},${y})"><circle cx="0" cy="-9" r="13" fill="#ffd76a" opacity=".25"/><rect x="-5" y="-3" width="10" height="3" rx="1" fill="#b98d5e"/><circle cx="0" cy="-8" r="5.5" fill="#fff2c4" stroke="#e9c46a"/></g>`,
+  cadre: (x, y) => `<g transform="translate(${x},${y})"><rect x="-11" y="-14" width="22" height="28" fill="#fffaf0" stroke="#b98d5e" stroke-width="2.2"/><path d="M-6,4 l4,-6 l3,4 l2,-2 l4,4Z" fill="#8fb8e8"/><circle cx="4" cy="-6" r="2.4" fill="#e9c46a"/></g>`,
+  /* objets d'histoire (dessins originaux, génériques) */
+  sousbock: (x, y) => `<g transform="translate(${x},${y})"><ellipse cx="0" cy="-1.500" rx="11" ry="3.200" fill="#c9a26b" stroke="#8d6a43"/><ellipse cx="0" cy="-2" rx="7" ry="1.800" fill="none" stroke="#8d6a43" stroke-width=".6"/><path d="M5,-3 v-11 q0,-3 3,-3 h4 q3,0 3,3 v11Z" fill="#f2c14e" stroke="#c9a03a" stroke-width=".7" opacity=".95"/><path d="M5,-14 q5,-3 10,0" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></g>`,
+  bouleNeige: (x, y) => `<g transform="translate(${x},${y})"><rect x="-8" y="-5" width="16" height="5" rx="1.500" fill="#6b4c3a"/><circle cx="0" cy="-14" r="10" fill="#dbeefa" stroke="#9fc3dc"/><path d="M-6,-8 q6,-4 12,0Z" fill="#fff"/><path d="M-1,-9 v-5 h2 v5" fill="#3f8f5f"/>${[[-5, -18], [3, -20], [5, -13], [-3, -12]].map(p => `<circle cx="${p[0]}" cy="${p[1]}" r=".9" fill="#fff"/>`).join('')}</g>`,
+  ticket: (x, y) => `<g transform="translate(${x},${y})"><rect x="-14" y="-11" width="28" height="22" fill="#fffaf0" stroke="#1d1d22" stroke-width="2"/><rect x="-10" y="-5" width="20" height="9" rx="1" fill="#e9dfc4" stroke="#b9a882" stroke-width=".6"/><path d="M-7,-1 h10 M-7,2 h6" stroke="#5c5440" stroke-width=".8"/><path d="M6,-3 l3,3 l-3,3" fill="none" stroke="#d7352b" stroke-width=".9"/></g>`,
+  calendrier: (x, y) => `<g transform="translate(${x},${y})"><rect x="-12" y="-14" width="24" height="28" fill="#fff" stroke="#c9c2b2"/><rect x="-12" y="-14" width="24" height="7" fill="#d7352b"/>${[0, 1, 2, 3].map(r => [0, 1, 2, 3, 4].map(c => `<rect x="${-10 + c * 4.300}" y="${-5 + r * 4.300}" width="3" height="3" fill="#e6e0d2"/>`).join('')).join('')}<circle cx="-4.300" cy="-.200" r="3.200" fill="none" stroke="#d7352b" stroke-width=".9"/><circle cx="-4.300" cy="-.200" r="4.200" fill="none" stroke="#d7352b" stroke-width=".6"/></g>`,
+  tasse: (x, y) => `<g transform="translate(${x},${y})"><path d="M-6,0 v-11 h12 v11Z" fill="#f4efe6" stroke="#c9b48e"/><path d="M6,-9 q5,0 5,4 q0,4 -5,4" fill="none" stroke="#c9b48e" stroke-width="1.6"/><path d="M-3,-14 q-2,-3 0,-6 M1,-14 q-2,-3 0,-6" stroke="#bbb" fill="none" stroke-width=".8"/></g>`,
+  marquepage: (x, y) => `<g transform="translate(${x},${y})"><rect x="-12" y="-6" width="18" height="6" rx="1" fill="#3f6fa8"/><rect x="-10" y="-17" width="4" height="13" fill="#d7352b"/><path d="M-10,-4 l2,-2 l2,2" fill="#3f6fa8"/><rect x="1" y="-19" width="4" height="15" fill="#e9c46a"/><path d="M1,-4 l2,-2 l2,2" fill="#3f6fa8"/></g>`,
+  lunettes: (x, y) => `<g transform="translate(${x},${y})"><circle cx="-5" cy="-3.500" r="3.800" fill="#e8f4fb" fill-opacity=".6" stroke="#6a4a36" stroke-width="1.300"/><circle cx="5" cy="-3.500" r="3.800" fill="#e8f4fb" fill-opacity=".6" stroke="#6a4a36" stroke-width="1.300"/><path d="M-1.200,-4 q1.200,-1.200 2.400,0 M-8.800,-4 l-3,3 M8.800,-4 l3,3" stroke="#6a4a36" stroke-width="1.100" fill="none"/></g>`,
+  bottines: (x, y) => `<g transform="translate(${x},${y})"><ellipse cx="0" cy="0" rx="16" ry="2.500" fill="#0002"/><path d="M-14,0 v-12 h6 v6 q5,1 6,6Z" fill="#7a4a2a"/><path d="M2,0 v-12 h6 v6 q5,1 6,6Z" fill="#8a5632"/><path d="M-13,-9 h4 M3,-9 h4" stroke="#e9d6b4" stroke-width=".8"/></g>`,
+  briques: (x, y) => `<g transform="translate(${x},${y})"><rect x="-6" y="-8" width="12" height="8" fill="#f2c31b" stroke="#c99a08" stroke-width=".7"/><rect x="-7" y="-17" width="14" height="9" fill="#f5cf2a" stroke="#c99a08" stroke-width=".7"/><path d="M-6,-17 l-3,-7 l5,4Z M6,-17 l3,-7 l-5,4Z" fill="#f5cf2a" stroke="#c99a08" stroke-width=".7"/><path d="M-9,-24 l1.200,2.400 M9,-24 l-1.200,2.400" stroke="#1d1d22" stroke-width="1.400"/><circle cx="-3" cy="-13" r="1" fill="#1d1d22"/><circle cx="3" cy="-13" r="1" fill="#1d1d22"/><circle cx="-4.500" cy="-10.500" r="1.400" fill="#e5533f"/><circle cx="4.500" cy="-10.500" r="1.400" fill="#e5533f"/><path d="M6,-4 l5,-6 l2,2 l-4,5Z" fill="#c99a08"/><circle cx="-2" cy="-8" r=".9" fill="#e4b510"/><circle cx="2" cy="-8" r=".9" fill="#e4b510"/></g>`,
+  carafe: (x, y) => `<g transform="translate(${x},${y})"><path d="M-7,0 q-3,-8 1,-14 q-3,-3 0,-5 h6 q3,2 0,5 q4,6 1,14Z" fill="#d6ecf7" fill-opacity=".85" stroke="#7fb4dc"/><path d="M1,-21 l5,-3 l-1,4" fill="#7fb4dc"/><circle cx="-2.500" cy="-9" r=".9" fill="#1b2236"/><path d="M-5,-5 q3,2 6,0" stroke="#7fb4dc" fill="none" stroke-width=".8"/><path d="M-6,-2 h12" stroke="#8fc6ea" stroke-width="3" opacity=".5"/></g>`,
+  carte: (x, y) => `<g transform="translate(${x},${y})"><path d="M-10,0 L-10,-10 L0,-14 L10,-10 L10,0Z" fill="#fffaf0" stroke="#c9b48e"/><path d="M0,-14 V0" stroke="#e2d8c2"/><path d="M-3,-7 q-2,-3 0,-3 q1.500,0 1.500,1.200 q0,-1.200 1.500,-1.200 q2,0 0,3 l-1.500,1.500Z" fill="#d7352b"/></g>`,
+  carnet: (x, y) => `<g transform="translate(${x},${y})"><rect x="-10" y="-4" width="20" height="4" rx="1" fill="#2f4f8f"/><rect x="-9" y="-6" width="18" height="2.400" fill="#f4efe6"/><rect x="-10" y="-8" width="20" height="2.400" rx="1" fill="#2f4f8f"/><path d="M4,-8 v-5 l2,1.500 l2,-1.500 v5" fill="#d7352b"/></g>`,
+  cle: (x, y) => `<g transform="translate(${x},${y})"><rect x="-10" y="-14" width="20" height="4" rx="2" fill="#b98d5e"/><path d="M0,-10 v4" stroke="#8d6a43" stroke-width="1.400"/><circle cx="0" cy="-2" r="4" fill="none" stroke="#d9b44a" stroke-width="2"/><path d="M0,2 v12 M0,10 h3 M0,13 h4" stroke="#d9b44a" stroke-width="2"/></g>`,
+  plan: (x, y) => `<g transform="translate(${x},${y})"><rect x="-17" y="-12" width="34" height="24" fill="#f6f1e2" stroke="#b9a882"/><path d="M-13,-8 h12 v8 h-12Z M1,-8 h12 v16 h-12Z M-13,2 h12 v6 h-12Z" fill="none" stroke="#3f6fa8" stroke-width=".9"/><path d="M-9,-4 l1.500,-1.500 l1.500,1.500 l-1.500,2Z M6,-2 l1.500,-1.500 l1.500,1.500 l-1.500,2Z" fill="#d7352b"/></g>`
 };
 
 /* ---------- Éléments de décor partagés ---------- */
 const D = {
-  parquet: (c, c2) => { let s = `<rect y="195" width="360" height="105" fill="${c}"/>`; for (let i = 0; i < 7; i++) { const y = 195 + i * 15; s += `<path d="M0,${y} H360" stroke="${c2}" stroke-width="1"/>`; for (let j = 0; j < 6; j++) s += `<path d="M${(j * 70 + (i % 2) * 35)},${y} v15" stroke="${c2}" stroke-width="1"/>`; } return s + `<rect y="192" width="360" height="4" fill="#fff" opacity=".9"/>`; },
+  parquet: (c, c2) => D.floor('parquet', c, c2),
+  /* Sol d'une pièce : le réglage de la pièce (mode Décorer) prime sur le sol d'origine */
+  floor: (kind, c, c2) => {
+    const f = ART.floor(); if (f) { kind = f[2]; c = f[3]; c2 = f[4]; }
+    let s = `<rect y="195" width="360" height="105" fill="${c}"/>`;
+    if (kind === 'tiles') { for (let i = 0; i <= 12; i++) s += `<path d="M${i * 30},195 V300" stroke="${c2}"/>`; for (let i = 0; i < 4; i++) s += `<path d="M0,${195 + i * 30} H360" stroke="${c2}"/>`; return s + `<rect y="192" width="360" height="4" fill="#eee"/>`; }
+    if (kind === 'checker') { for (let r = 0; r < 4; r++) for (let k = 0; k < 13; k++) if ((r + k) % 2 === 0) s += `<rect x="${k * 30 - 15}" y="${195 + r * 27}" width="30" height="27" fill="${c2}"/>`; return s; }
+    if (kind === 'grass') { for (let i = 0; i < 40; i++) s += `<path d="M${(i * 37) % 360},${200 + (i * 53) % 98} l2,-5 l2,5" stroke="${c2}" fill="none"/>`; return s; }
+    for (let i = 0; i < 7; i++) { const y = 195 + i * 15; s += `<path d="M0,${y} H360" stroke="${c2}" stroke-width="1"/>`; for (let j = 0; j < 6; j++) s += `<path d="M${(j * 70 + (i % 2) * 35)},${y} v15" stroke="${c2}" stroke-width="1"/>`; }
+    return s + `<rect y="192" width="360" height="4" fill="#fff" opacity=".9"/>`;
+  },
   windowW: (x, y, w, h) => { if (ART.night()) { let st = ''; for (let i = 0; i < 6; i++) st += `<circle class="bulb" style="animation-delay:${-i * .4}s" cx="${x + 6 + (i * 37) % (w - 12)}" cy="${y + 8 + (i * 23) % (h * .5)}" r="1" fill="#fff"/>`; return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#1c2547"/><circle cx="${x + w - 13}" cy="${y + 15}" r="7" fill="#f4e7b8"/>${st}<path d="M${x},${y + h * .72} q${w * .3},-14 ${w * .55},-4 q${w * .25},-10 ${w * .45},0 V${y + h} H${x}Z" fill="#121a36"/><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#fff" stroke-width="5"/><path d="M${x + w / 2},${y} v${h} M${x},${y + h / 2} h${w}" stroke="#fff" stroke-width="3"/>`; }
     const se = ART.season(), sky = { hiver: '#cfd9e6', printemps: '#c6e6f7', ete: '#aee0fb', automne: '#e9d9bf' }[se], hill = { hiver: '#f4f7fa', printemps: '#a9d3a0', ete: '#8cc474', automne: '#d9a55a' }[se];
     let fl = ''; if (se !== 'ete') for (let i = 0; i < 7; i++) fl += `<circle class="fall" style="animation-delay:${-i * .7}s;animation-duration:${se === 'hiver' ? 4.5 : 6}s" cx="${6 + i * (w - 12) / 6}" cy="-4" r="${se === 'hiver' ? 1.6 : 2}" fill="${{ hiver: '#fff', printemps: '#f7b9cd', automne: '#d9762b' }[se]}"/>`;
     else fl = `<circle cx="${w - 12}" cy="14" r="8" fill="#ffe27a"/>`;
     return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${sky}"/><path d="M${x},${y + h * .72} q${w * .3},-14 ${w * .55},-4 q${w * .25},-10 ${w * .45},0 V${y + h} H${x}Z" fill="${hill}" opacity=".9"/><svg x="${x}" y="${y}" width="${w}" height="${h}" style="--fh:${h + 10}px">${fl}</svg><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#fff" stroke-width="5"/><path d="M${x + w / 2},${y} v${h} M${x},${y + h / 2} h${w}" stroke="#fff" stroke-width="3"/>`; },
-  curtain: (x, y1, y2, c) => `<path d="M${x - 9},${y1} h18 q-4,${(y2 - y1) / 2} 3,${y2 - y1} h-22 q6,${-(y2 - y1) / 2} 1,${-(y2 - y1)}Z" fill="${c}"/><path d="M${x - 3},${y1} q-3,${(y2 - y1) / 2} 0,${y2 - y1} M${x + 4},${y1} q-3,${(y2 - y1) / 2} 2,${y2 - y1}" stroke="#0001" fill="none"/>`,
+  curtain: (x, y1, y2, c) => (c = ART.curtain(c), `<path d="M${x - 9},${y1} h18 q-4,${(y2 - y1) / 2} 3,${y2 - y1} h-22 q6,${-(y2 - y1) / 2} 1,${-(y2 - y1)}Z" fill="${c}"/><path d="M${x - 3},${y1} q-3,${(y2 - y1) / 2} 0,${y2 - y1} M${x + 4},${y1} q-3,${(y2 - y1) / 2} 2,${y2 - y1}" stroke="#0001" fill="none"/>`),
   sofa: (x, y, c, c2) => `<g transform="translate(${x},${y})"><rect x="0" y="0" width="118" height="40" rx="11" fill="${c}"/><rect x="-4" y="16" width="20" height="44" rx="8" fill="${c2}"/><rect x="102" y="16" width="20" height="44" rx="8" fill="${c2}"/><rect x="12" y="28" width="94" height="28" rx="6" fill="${c}"/><path d="M43,30 v24 M75,30 v24" stroke="#0002" stroke-width="1.4"/><rect x="2" y="56" width="114" height="6" rx="2" fill="${c2}"/><rect x="6" y="62" width="5" height="5" fill="#3a2a20"/><rect x="107" y="62" width="5" height="5" fill="#3a2a20"/></g>`,
   plaidVert: (x, y) => `<g data-hs="plaidvert" transform="translate(${x},${y})"><path d="M0,0 h26 l3,40 l-27,5Z" fill="#3f8f5f"/><path d="M6,0 l1,44 M14,0 l2,42 M21,0 l3,41 M0,12 h28 M1,26 h28" stroke="#2f6f48" stroke-width="1"/><path d="M2,45 v4 M8,44 v4 M14,43 v4 M20,42 v4 M26,41 v4" stroke="#3f8f5f" stroke-width="1.5"/></g>`,
   coussinVert: (x, y) => `<rect data-hs="plaidvert" x="${x}" y="${y}" width="24" height="21" rx="6" fill="#4d9d6b" transform="rotate(-8 ${x + 12} ${y + 10})"/>`,
-  rug: (cx, cy, rx, ry) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#ead9bd" stroke="#d6c3a0" stroke-width="2"/><ellipse cx="${cx}" cy="${cy}" rx="${rx - 9}" ry="${ry - 5}" fill="none" stroke="#dccaa8" stroke-dasharray="3 4"/>`,
+  rug: (cx, cy, rx, ry, st) => { const r = RUGS.find(x => x[0] === (st !== undefined ? st : ART.rug())) || RUGS[0], [, , a, b, pat] = r[0] ? r : ['', '', '#ead9bd', '#d6c3a0', 'dash'];
+    let t = `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${a}" stroke="${b}" stroke-width="2"/>`;
+    if (pat === 'stripe') for (let i = -2; i <= 2; i++) t += `<ellipse cx="${cx}" cy="${cy}" rx="${rx * (.25 + Math.abs(i) * .17)}" ry="${ry * (.25 + Math.abs(i) * .17)}" fill="none" stroke="${b}" stroke-width="1.400"/>`;
+    else if (pat === 'berb') for (let i = 0; i < 7; i++) t += `<path d="M${cx - rx * .6 + i * rx * .2},${cy - ry * .35} l${rx * .1},${ry * .35} l${-rx * .1},${ry * .35}" stroke="${b}" fill="none" stroke-width="1.200"/>`;
+    else t += `<ellipse cx="${cx}" cy="${cy}" rx="${rx - 9}" ry="${ry - 5}" fill="none" stroke="${b}" stroke-dasharray="3 4"/>`;
+    return t; },
   tableTeckel: (cx, cy) => `<g transform="translate(${cx},${cy})"><ellipse cx="0" cy="19" rx="16" ry="4" fill="#e6e6e6"/><rect x="-4" y="1" width="8" height="18" fill="#efefef"/><ellipse cx="0" cy="0" rx="31" ry="9.5" fill="#ffffff" stroke="#dcdcdc"/>` +
     `<g data-hs="lampe"><ellipse cx="-15" cy="-3" rx="5" ry="1.8" fill="#aab4be"/><path d="M-15,-3 V-17" stroke="#9aa3ab" stroke-width="1.6"/><path d="M-23,-17 a8,8 0 0 1 16,0Z" fill="url(#chrome)"/></g>` +
     `<g data-hs="teckel"><rect x="-3" y="-8" width="24" height="4.4" rx="2.2" fill="#111"/><circle cx="22" cy="-8.6" r="2.9" fill="#111"/><rect x="23" y="-9" width="5.5" height="2.2" rx="1.1" fill="#111"/><ellipse cx="20.5" cy="-7" rx="1.3" ry="2.6" fill="#000"/><path d="M-1,-4 v3 M2,-4 v3 M16,-4 v3 M19,-4 v3" stroke="#111" stroke-width="1.6"/><path d="M-3,-7 l-4,-3" stroke="#111" stroke-width="1.3" stroke-linecap="round"/>${['', '<path d="M16.500,-7.600 l2.400,1.600 l-2.400,1.600Z M21.300,-7.600 l-2.400,1.600 l2.400,1.600Z" fill="#d7352b"/>', '<path d="M19.200,-10.600 q2.800,-5 5.600,0Z" fill="#d7352b"/><circle cx="22" cy="-14.400" r="1.100" fill="#fff"/>', '<rect x="20" y="-10.400" width="5.400" height="1.900" rx=".9" fill="#e9c46a"/>', '<rect x="7" y="-8.800" width="3.200" height="6" rx="1.600" fill="#c2577a"/>'][ART.flags().teckelAcc || 0]}<rect x="-8" y="-16" width="36" height="17" fill="transparent"/></g></g>`,
@@ -959,7 +1010,7 @@ const ROOMS = {
         `<g data-hs="cuisineleo"><rect x="326" y="62" width="34" height="133" fill="#3d4a4a"/><rect x="330" y="128" width="30" height="6" fill="#d9d9d9"/><rect x="330" y="134" width="30" height="61" fill="#eef0ee"/><circle cx="342" cy="126" r="5" fill="#222"/><rect x="336" y="84" width="24" height="20" fill="#f4f4f4"/><rect x="323" y="58" width="5" height="137" fill="#fff"/><rect x="323" y="58" width="37" height="5" fill="#fff"/></g>` +
         `<g data-hs="canape">${D.sofa(6, 148, '#7b4c2f', '#68401f')}</g>` + D.coussinVert(24, 168) + D.plaidVert(100, 156) +
         D.rug(128, 256, 98, 27) + D.tableTeckel(128, 246) + D.tv(234, 150) },
-    { name: 'Entrée', spots: [[120, 294, 1.12], [232, 294, 1.12], [176, 298, 1.1]], slots: { w: [], f: [], t: [] },
+    { name: 'Entrée', spots: [[120, 294, 1.12], [232, 294, 1.12], [176, 298, 1.1]], slots: { w: [], f: [], t: [] }, rugAt: [180, 266, 44, 10],
       draw: () => `<path d="M0,0 H360 L240,40 H120Z" fill="#ece6da"/><path d="M0,0 L120,40 V200 L0,300Z" fill="#f5f0e7"/><path d="M360,0 L240,40 V200 L360,300Z" fill="#eee8dc"/><rect x="120" y="40" width="120" height="160" fill="#faf6ee"/>` +
         `<path d="M0,300 L120,200 H240 L360,300Z" fill="#e3c896"/>${[0, 1, 2, 3, 4, 5, 6].map(i => `<path d="M${120 + i * 20},200 L${i * 60},300" stroke="#d3b680"/>`).join('')}<path d="M72,240 H288 M30,275 H330" stroke="#d3b680"/>` +
         `<g data-hs="portRouge"><rect x="147" y="58" width="66" height="142" fill="#fff"/><rect x="151" y="62" width="58" height="138" fill="#d7352b"/><rect x="151" y="62" width="58" height="138" fill="none" stroke="#a9241c" stroke-width="2"/><rect x="157" y="158" width="46" height="34" fill="none" stroke="#b92b22" stroke-width="1.6"/><circle cx="158" cy="134" r="3" fill="#e9c46a"/><rect x="165" y="74" width="30" height="74" rx="2" fill="url(#mirror)" stroke="#d9c79b" stroke-width="2.4"/><g transform="translate(180,112) scale(1.150)" opacity=".92">${headArt(PEOPLE[ART.activeId()], 'flat', lookOf(ART.activeId()))}</g><path d="M168,80 l8,-4 M170,90 l12,-7" stroke="#fff" stroke-width="1.4" opacity=".8"/></g>` +
@@ -969,11 +1020,9 @@ const ROOMS = {
 
   /* 54 rue de la Convention, Le Kremlin-Bicêtre — 50 m² */
   coloc: { name: '54 rue de la Convention', rooms: [
-    { name: 'Salon', spots: [[40, 290, 1], [206, 286, 1], [156, 294, 1], [110, 294, 1]],
+    { name: 'Salon', spots: [[40, 290, 1], [206, 286, 1], [156, 294, 1], [110, 294, 1]], rugAt: [236, 282, 58, 12],
       slots: { w: [[200, 74], [246, 74], [20, 40]], f: [[166, 268], [348, 290], [20, 246]], t: [[98, 214], [284, 236]] },
-      draw: () => { let t = `<rect width="360" height="195" fill="#fbfbfa"/><rect y="195" width="360" height="105" fill="#cdd0d5"/>`;
-        for (let i = 0; i <= 12; i++) t += `<path d="M${i * 30},195 V300" stroke="#b9bdc4"/>`; for (let i = 0; i < 4; i++) t += `<path d="M0,${195 + i * 30} H360" stroke="#b9bdc4"/>`;
-        t += `<rect y="192" width="360" height="4" fill="#eee"/>`;
+      draw: () => { let t = `<rect width="360" height="195" fill="${ART.wallR('#fbfbfa')}"/>` + D.floor('tiles', '#cdd0d5', '#b9bdc4');
         t += `<g data-hs="porteColoc"><rect x="4" y="64" width="34" height="131" fill="#ebe6dc" stroke="#d6cfc0" stroke-width="2"/><circle cx="32" cy="134" r="2.4" fill="#999"/></g>`;
         t += D.windowW(62, 36, 96, 78);
         t += `<g data-hs="canapeColoc">${D.sofa(50, 122, '#8fa2b8', '#7b8fa6')}</g><rect x="64" y="140" width="22" height="20" rx="6" fill="#e2a52e"/><rect x="132" y="140" width="22" height="20" rx="6" fill="#f1e7d2"/>`;
@@ -984,7 +1033,7 @@ const ROOMS = {
         t += `<g data-hs="tableNoire"><rect x="246" y="208" width="18" height="24" rx="3" fill="none" stroke="#2a2a2d" stroke-width="3"/><rect x="302" y="208" width="18" height="24" rx="3" fill="none" stroke="#2a2a2d" stroke-width="3"/><rect x="234" y="232" width="100" height="8" rx="2" fill="#1c1c1e"/><path d="M240,240 v32 M328,240 v32" stroke="#1c1c1e" stroke-width="4"/><rect x="250" y="246" width="18" height="30" rx="3" fill="#2a2a2d"/><rect x="300" y="246" width="18" height="30" rx="3" fill="#2a2a2d"/></g>`;
         t += `<g data-hs="chaussette"><path d="M150,286 h10 v-9 h5 v13 q0,3 -3,3 h-12Z" fill="#f4f4f4" stroke="#ccc"/><path d="M160,280 h5" stroke="#d7352b" stroke-width="2"/></g>`;
         return t; } },
-    { name: 'Chambre de Léonore', spots: [[206, 288, 1], [150, 290, 1], [260, 290, 1]],
+    { name: 'Chambre de Léonore', tab: 'Sa chambre', coin: true, spots: [[206, 288, 1], [150, 290, 1], [260, 290, 1]], rugAt: [196, 274, 66, 14],
       slots: { w: [[60, 74], [128, 62], [186, 70]], f: [[40, 272], [322, 280], [116, 282]], t: [[262, 160], [181, 168]] },
       draw: () => `<rect width="360" height="195" fill="${ART.wall('coloc', '#fdf0ec')}"/>${D.parquet('#dcbd8e', '#cba978')}` + D.windowW(262, 34, 70, 84) + D.curtain(256, 28, 150, '#fff7f2') + D.curtain(338, 28, 150, '#fff7f2') +
         `<g data-hs="lit"><rect x="4" y="122" width="10" height="84" rx="3" fill="#b98d5e"/><rect x="10" y="168" width="152" height="40" rx="4" fill="#b98d5e"/><rect x="12" y="152" width="148" height="26" rx="6" fill="#fff"/><rect x="18" y="142" width="38" height="18" rx="7" fill="#fff" stroke="#eee"/><rect x="52" y="150" width="110" height="40" rx="9" fill="#f3c3cc"/><path d="M62,160 h90 M62,172 h90" stroke="#e9aab6" stroke-dasharray="5 5"/></g>` +
@@ -1006,7 +1055,13 @@ const ROOMS = {
         else t += `<rect x="322" y="62" width="36" height="133" fill="#e9e2d2" stroke="#fff" stroke-width="4"/>`;
         t += `<g data-hs="canape">${D.sofa(4, 150, '#7b4c2f', '#68401f')}</g>` + D.coussinVert(22, 170) + D.plaidVert(98, 158) + D.fauteuilPlaid(134, 150);
         t += D.rug(128, 258, 96, 26) + D.tableTeckel(128, 248) + D.tv(226, 150) + D.carton(338, 288);
-        return t; } }
+        return t; } },
+    /* Ajoutée en v2 (index 1) : le coin de Léonore, simple à aménager */
+    { name: 'Le coin de Léonore', tab: 'Son coin', coin: true, auto: false, spots: [[156, 290, 1], [226, 292, 1]], rugAt: [170, 270, 70, 15],
+      slots: { w: [[58, 66], [128, 58], [306, 72]], f: [[40, 280], [214, 280], [326, 288]], t: [[268, 182], [300, 182]] },
+      draw: () => `<rect width="360" height="195" fill="${ART.wallR('#f3e4e0')}"/>${D.parquet('#d8b580', '#c7a26b')}` + D.windowW(150, 30, 72, 90) + D.curtain(142, 22, 132, '#f7e9e2') + D.curtain(230, 22, 132, '#f7e9e2') +
+        `<g data-hs="fauteuilCoin"><rect x="66" y="140" width="56" height="54" rx="14" fill="#c97a6a"/><rect x="72" y="166" width="44" height="22" rx="8" fill="#e09a88"/><rect x="60" y="150" width="12" height="44" rx="6" fill="#b86a5a"/><rect x="116" y="150" width="12" height="44" rx="6" fill="#b86a5a"/></g>` + D.plaidVert(104, 150) +
+        `<g data-hs="livresCoin"><rect x="250" y="186" width="70" height="10" fill="#b98d5e"/><rect x="252" y="196" width="66" height="34" fill="#c9a26b" stroke="#a9834f"/><path d="M252,213 h66" stroke="#a9834f"/>${[0, 1, 2, 3, 4, 5].map(i => `<rect x="${256 + i * 9}" y="${199 + (i % 2)}" width="7" height="13" fill="${['#b23b3b', '#3f6fa8', '#e2a52e', '#3f8f5f', '#7a58ab', '#f3e6cf'][i]}"/>`).join('')}</g>` },
   ] },
 
   maison: { name: 'La maison', rooms: [
@@ -1018,17 +1073,27 @@ const ROOMS = {
         t += `<g data-hs="toise"><rect x="246" y="62" width="34" height="133" fill="#ece4d3" stroke="#fff" stroke-width="4"/><circle cx="252" cy="134" r="2.4" fill="#999"/><path d="M284,170 h7 M284,156 h7 M284,140 h7 M284,122 h7" stroke="#b23b3b" stroke-width="1.4"/></g>`;
         t += `<g data-hs="canape">${D.sofa(8, 204, '#7b4c2f', '#68401f')}</g>` + D.coussinVert(26, 224) + D.plaidVert(102, 212);
         t += D.rug(196, 264, 70, 20) + D.tableTeckel(196, 256) + D.tv(262, 152) + D.carton(338, 262);
-        return t; } }
+        return t; } },
+    /* Ajoutée en v2 (index 1) : le jardin, enfin utilisé */
+    { name: 'Le jardin', tab: 'Jardin', auto: false, spots: [[150, 292, 1], [200, 294, 1], [104, 294, 1]], rugAt: [180, 276, 70, 13],
+      slots: { w: [[70, 72], [112, 92], [306, 96]], f: [[150, 282], [254, 288], [334, 276], [30, 292]], t: [[222, 212], [196, 212]] },
+      draw: () => { let t = `<rect width="360" height="195" fill="${ART.season() === 'hiver' ? '#cfd9e6' : '#bfe2f6'}"/><circle cx="318" cy="36" r="16" fill="#ffe27a" opacity="${ART.night() ? .25 : 1}"/>`;
+        t += `<path d="M0,150 q90,-24 180,-8 q90,-18 180,4 V195 H0Z" fill="#a9d3a0"/>` + D.floor('grass', ART.season() === 'hiver' ? '#eef3f6' : '#8cc474', ART.season() === 'hiver' ? '#d4dde4' : '#6fa95a');
+        t += [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(i => `<rect x="${i * 31}" y="160" width="9" height="38" fill="#f4efe6" stroke="#d8cfbd"/>`).join('') + `<path d="M0,170 H360 M0,186 H360" stroke="#e8dfcf" stroke-width="4"/>`;
+        t += `<g data-hs="cerisier"><rect x="80" y="70" width="14" height="130" fill="#7a5238"/><circle cx="88" cy="66" r="50" fill="${ART.season() === 'printemps' ? '#f7c6d4' : ART.season() === 'automne' ? '#e2a65a' : ART.season() === 'hiver' ? '#e8eef2' : '#6fae5e'}"/><circle cx="60" cy="88" r="28" fill="${ART.season() === 'printemps' ? '#f3b3c6' : ART.season() === 'automne' ? '#d98f45' : ART.season() === 'hiver' ? '#dde6ec' : '#5f9e50'}"/></g>`;
+        t += `<g data-hs="potager"><rect x="268" y="236" width="80" height="26" rx="3" fill="#7a5238"/><rect x="272" y="238" width="72" height="20" fill="#5c3b26"/>${[0, 1, 2, 3].map(i => `<path d="M${282 + i * 17},250 q-4,-10 0,-14 q4,4 0,14" fill="#3f8f5f"/><circle cx="${285 + i * 17}" cy="242" r="2.600" fill="#d7352b"/>`).join('')}</g>`;
+        t += `<g data-hs="transats"><path d="M140,256 l30,-34 h10 l-30,34Z" fill="#3f6fa8"/><path d="M146,256 l-6,10 M170,224 l14,40" stroke="#b98d5e" stroke-width="3"/><path d="M186,262 l30,-34 h10 l-30,34Z" fill="#d7352b"/><path d="M192,262 l-6,10 M216,230 l14,40" stroke="#b98d5e" stroke-width="3"/></g>`;
+        t += `<g data-hs="tableJardin"><rect x="190" y="212" width="54" height="5" rx="2" fill="#f4efe6" stroke="#d8cfbd"/><path d="M196,217 v22 M238,217 v22" stroke="#d8cfbd" stroke-width="3"/></g>`;
+        return t; } },
   ] },
 
   manoir: { name: 'Le manoir', rooms: [
-    { name: 'Grand salon', spots: [[150, 290, 1], [196, 290, 1], [240, 294, 1], [104, 294, 1], [284, 294, 1], [62, 292, 1], [322, 292, 1]],
+    { name: 'Grand salon', rugAt: [196, 280, 70, 13], spots: [[150, 290, 1], [196, 290, 1], [240, 294, 1], [104, 294, 1], [284, 294, 1], [62, 292, 1], [322, 292, 1]],
       slots: { w: [[96, 60], [230, 52], [130, 52]], f: [[226, 262], [20, 286], [336, 290], [118, 264]], t: [[262, 106], [318, 106]] },
       draw: () => { const fl = ART.flags(); let t = `<rect width="360" height="195" fill="${ART.wall('manoir', '#34564d')}"/>`;
         for (let i = 0; i < 6; i++) t += `<rect x="${6 + i * 60}" y="14" width="48" height="126" fill="none" stroke="#e9c46a" stroke-width="1.2" opacity=".55"/>`;
         t += `<rect y="150" width="360" height="45" fill="#00000030"/><path d="M0,150 H360" stroke="#e9c46a" stroke-width="2"/>`;
-        t += `<rect y="195" width="360" height="105" fill="#f3efe6"/>`;
-        for (let r = 0; r < 4; r++) for (let c = 0; c < 13; c++) if ((r + c) % 2 === 0) t += `<rect x="${c * 30 - 15}" y="${195 + r * 27}" width="30" height="27" fill="#23262d"/>`;
+        t += D.floor('checker', '#f3efe6', '#23262d');
         t += `<g data-hs="portRouge"><rect x="8" y="46" width="58" height="149" fill="#d7352b" stroke="#e9c46a" stroke-width="3"/><path d="M37,46 v149" stroke="#a9241c" stroke-width="2"/><rect x="14" y="60" width="18" height="52" fill="url(#mirror)" stroke="#e9c46a" stroke-width="1.6"/><rect x="42" y="60" width="18" height="52" fill="none" stroke="#b92b22" stroke-width="1.6"/><circle cx="32" cy="130" r="2.6" fill="#e9c46a"/><circle cx="42" cy="130" r="2.6" fill="#e9c46a"/></g>`;
         t += `<g data-hs="escalier"><path d="M92,195 L124,84 H216 L244,195Z" fill="#c9b796"/><path d="M106,195 L132,84 H208 L230,195Z" fill="#d7352b"/>${[0, 1, 2, 3, 4, 5, 6].map(i => `<path d="M${95 + i * 4.4},${180 - i * 15} H${241 - i * 3.9}" stroke="#0003" stroke-width="1.6"/>`).join('')}<rect x="120" y="40" width="100" height="46" fill="#27345c"/><circle cx="196" cy="56" r="6" fill="#f4efe6"/><rect x="120" y="40" width="100" height="46" fill="none" stroke="#e9c46a" stroke-width="3"/><path d="M170,40 v46" stroke="#e9c46a" stroke-width="2"/></g>`;
         t += `<g data-hs="lustre"><path d="M170,0 V14" stroke="#e9c46a" stroke-width="2"/><path d="M146,22 q24,16 48,0" fill="none" stroke="#e9c46a" stroke-width="3"/><path d="M150,22 v-7 M162,27 v-7 M178,27 v-7 M190,22 v-7" stroke="#fff" stroke-width="3"/><circle class="bulb" cx="150" cy="13" r="2.4" fill="#ffd76a"/><circle class="bulb" cx="162" cy="18" r="2.4" fill="#ffd76a"/><circle class="bulb" cx="178" cy="18" r="2.4" fill="#ffd76a"/><circle class="bulb" cx="190" cy="13" r="2.4" fill="#ffd76a"/></g>`;
@@ -1037,7 +1102,15 @@ const ROOMS = {
         t += `<g data-hs="teckel"><path d="M280,106 a12,13 0 0 1 24,0Z" fill="#ffffff40" stroke="#fff" stroke-width=".8"/><rect x="283" y="100" width="15" height="3.2" rx="1.6" fill="#111"/><circle cx="299" cy="99.600" r="2.1" fill="#111"/><rect x="299.500" y="99.200" width="4" height="1.6" fill="#111"/><path d="M284.500,103 v2.400 M296,103 v2.400" stroke="#111" stroke-width="1.3"/></g>`;
         t += `<g data-hs="biblio"><rect x="340" y="70" width="${fl.passage ? 14 : 20}" height="125" fill="#6b4c3a" stroke="#8d6a43"/>${[0, 1, 2, 3, 4, 5].map(i => `<path d="M341,${88 + i * 18} h${fl.passage ? 12 : 18}" stroke="#b98d5e" stroke-width="2"/>`).join('')}${fl.passage ? `<rect x="354" y="70" width="6" height="125" fill="#0b0b10"/><path d="M355,120 l4,0" stroke="#ffd76a" stroke-width="2"/>` : ''}</g>`;
         t += `<g data-hs="canape">${D.sofa(54, 206, '#7b4c2f', '#68401f')}</g>` + D.coussinVert(72, 226) + D.plaidVert(148, 214) + D.carton(326, 270);
-        return t; } }
+        return t; } },
+    /* Ajoutée en v2 (index 1) : la pièce derrière la bibliothèque, selon le choix déjà fait (musée, projection, cachette) */
+    { name: 'La pièce secrète', tab: 'Pièce secrète', auto: false, avail: () => !!ART.flags().passage, spots: [[150, 292, 1], [210, 292, 1]], rugAt: [180, 268, 96, 20],
+      slots: { w: [[60, 70], [118, 60], [242, 60], [300, 70]], f: [[30, 288], [330, 288], [96, 274]], t: [[180, 176], [140, 176], [220, 176]] },
+      draw: () => { const k = ART.flags().piece || 0; let t = `<rect width="360" height="195" fill="${ART.wallR(['#3d2f4a', '#16161d', '#4a3a2c'][k] || '#3d2f4a')}"/><path d="M0,0 Q180,40 360,0" fill="#0003"/>` + D.floor('parquet', '#8d6a43', '#7a5a38');
+        if (k === 0) t += `<g data-hs="vitrine"><rect x="120" y="176" width="120" height="26" fill="#6b4c3a"/><rect x="124" y="120" width="112" height="58" fill="#dbeefa" fill-opacity=".35" stroke="#e9c46a" stroke-width="2"/><path d="M180,120 v58" stroke="#e9c46a"/><text x="180" y="112" text-anchor="middle" font-size="8" fill="#e9c46a" font-family="Georgia,serif">MUSÉE DE NOS DÉBUTS</text></g>`;
+        if (k === 1) t += `<g data-hs="ecran"><rect x="70" y="24" width="220" height="110" fill="#f4f1ea" stroke="#2b2b30" stroke-width="4"/><text x="180" y="86" text-anchor="middle" font-size="11" fill="#9aa3bd" font-family="Georgia,serif">touche pour projeter</text></g><g data-hs="fauteuilsProj"><rect x="104" y="206" width="54" height="40" rx="10" fill="#b23b3b"/><rect x="202" y="206" width="54" height="40" rx="10" fill="#b23b3b"/></g>`;
+        if (k === 2) t += `<g data-hs="cachette"><path d="M20,30 Q180,70 340,30" fill="none" stroke="#6b5a48"/>${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => `<circle class="bulb" cx="${40 + i * 35}" cy="${38 + Math.sin(i / 8 * Math.PI) * 18}" r="3" fill="#ffd76a"/>`).join('')}<ellipse cx="180" cy="230" rx="90" ry="18" fill="#7a58ab"/><rect x="104" y="204" width="40" height="26" rx="10" fill="#e98aa0"/><rect x="214" y="204" width="40" height="26" rx="10" fill="#8fb8e8"/><rect x="160" y="196" width="40" height="26" rx="10" fill="#e9c46a"/></g>`;
+        return t; } },
   ] }
 };
 
@@ -1045,40 +1118,63 @@ const ROOMS = {
 /* =====================================================================
    DONNÉES — src/data.js : boutique, activités, répliques d'exploration
    ===================================================================== */
+/* Prix revus pour décorer en jouant l'histoire (chaque prix ≤ l'ancien, en commentaire).
+   Petits objets 3–10 € · meubles 10–25 € · grosses pièces 25–45 € · matériel à effet −30 à −36 %.
+   coin : kit gratuit pour aménager son coin · story : objet reçu avec un souvenir (jamais en boutique).
+   variants : [clé, nom, couleur] — la clé '' est l'aspect d'origine. */
 const ITEMS = {
-  plante:    { name: 'Monstera « Gérard »', price: 25, slot: 'f', desc: 'Il faut l’arroser. Mathys propose de « s’en occuper ». Non.' },
-  guirlande: { name: 'Guirlande lumineuse', price: 15, slot: 'g', desc: 'Transforme n’importe quel soir en soir de décembre.' },
-  photo:     { name: 'Photo de nous deux', price: 20, slot: 'w', desc: 'Celle où on rit tous les deux. La seule qui n’est pas floue.' },
-  lampe:     { name: 'Lampe champignon', price: 30, slot: 'f', desc: 'Une lumière orange qui pardonne tout.' },
-  pouf:      { name: 'Pouf moutarde', price: 40, slot: 'f', desc: 'Personne ne s’assoit dessus. Tout le monde y pose ses pieds.' },
-  vinyle:    { name: 'Platine vinyle', price: 90, slot: 't', desc: 'Le disque craque. C’est fait exprès. Paraît-il.' },
-  console:   { name: 'Console de jeux', price: 150, slot: 't', desc: 'Les soirées jeux rapportent +1 ❤. Et des accusations de triche.' },
-  affiche:   { name: 'Affiche « Le Grand Soir »', price: 20, slot: 'w', who: 'leo', desc: 'Un film qui n’existe pas encore. Léo y travaille.' },
-  cafe:      { name: 'Machine à café', price: 70, slot: 't', who: 'leo', desc: '+20 € par journée de dossier. La caféine est un levier.' },
-  camera:    { name: 'Caméra sur trépied', price: 120, slot: 'f', who: 'leo', desc: 'Le projet ciné avance plus vite (+1 🎬).' },
-  stetho:    { name: 'Stéthoscope', price: 45, slot: 'w', who: 'leonore', med: true, desc: '+15 € par garde. Le cœur de Léo monte à 110 quand tu l’écoutes.' },
-  atlas:     { name: 'Atlas d’anatomie', price: 35, slot: 't', who: 'leonore', med: true, desc: 'Réviser rapporte +1 🩺.' },
-  marteau:   { name: 'Marteau réflexe', price: 15, slot: 't', who: 'leonore', med: true, desc: 'Pour tester les réflexes de Léo. Ils sont nuls.' },
-  squelette: { name: 'Squelette « Jean-Michel »', price: 80, slot: 'f', who: 'leonore', med: true, desc: 'Réviser rapporte +1 🩺. Mathys refuse de dormir à côté.' },
-  horloge:   { name: 'Horloge murale', price: 25, slot: 'w', desc: 'Léo l’a réglée à la seconde. Léonore ne la regarde jamais.' },
-  etagere:   { name: 'Étagère à plantes', price: 45, slot: 'w', desc: 'Trois livres, une plante, et de la place pour un cheveu de Léonore.' },
-  guitare:   { name: 'Guitare', price: 70, slot: 'f', desc: 'Personne n’en joue. Aaron, si. Très doucement.' },
-  popcorn:   { name: 'Machine à pop-corn', price: 35, slot: 't', desc: 'Pour les soirées séries. Léo ramasse chaque grain tombé.' },
-  miroir:    { name: 'Miroir sur pied', price: 55, slot: 'f', desc: 'Pour vérifier une tenue. Ou une boucle rebelle.' },
-  robot:     { name: 'Aspirateur robot « Roberto »', price: 110, slot: 'f', who: 'leo', desc: 'Léo le suit des yeux. Puis il repasse derrière.' },
-  sorcier:   { name: 'Affiche « École de sorciers »', price: 15, slot: 'w', who: 'leonore', desc: 'Accrochée en face du canapé. Léo ne peut plus faire comme s’il n’avait rien vu.' },
-  panier:    { name: 'Panier du chien', price: 40, slot: 'f', stage: 1, desc: 'Le chien dort sur le canapé. Mathys a essayé le panier.' },
-  aquarium:  { name: 'Aquarium', price: 200, slot: 'f', stage: 1, desc: 'Deux poissons. Léonore surveille leur état général.' },
-  biblio:    { name: 'Bibliothèque', price: 250, slot: 'f', stage: 1, desc: 'Moitié médecine, moitié scénarios, un rayon BD contesté.' },
-  babyfoot:  { name: 'Baby-foot', price: 600, slot: 'f', stage: 2, desc: 'Les deux pères s’y affrontent à chaque visite.' },
-  piano:     { name: 'Piano droit', price: 900, slot: 'f', stage: 2, desc: 'Personne ne sait en jouer. Pour l’instant.' },
-  disco:     { name: 'Boule à facettes', price: 800, slot: 'w', stage: 3, desc: 'Indispensable pour une grande soirée.' },
-  armure:    { name: 'Armure « Sir Jean-Michel II »', price: 1500, slot: 'f', stage: 3, desc: 'Un manoir sans armure, c’est une grande maison.' },
+  plante:    { name: 'Monstera « Gérard »', price: 8, slot: 'f', variants: [['', 'Pot terre cuite', '#c8693f'], ['blanc', 'Pot blanc', '#f1ede4'], ['bleu', 'Pot bleu', '#3f6fa8']], desc: 'Il faut l’arroser. Mathys propose de « s’en occuper ». Non.' },   // 25
+  guirlande: { name: 'Guirlande lumineuse', price: 6, slot: 'g', desc: 'Transforme n’importe quel soir en soir de décembre. Touche-la pour l’allumer ou l’éteindre.' },   // 15
+  photo:     { name: 'Photo de nous deux', price: 5, slot: 'w', variants: [['', 'Cadre bois', '#b98d5e'], ['noir', 'Cadre noir', '#1d1d22'], ['dore', 'Cadre doré', '#d9b44a']], desc: 'Celle où on rit tous les deux. La seule qui n’est pas floue.' },   // 20
+  lampe:     { name: 'Lampe champignon', price: 9, slot: 'f', variants: [['', 'Orange', '#f08a5d'], ['vert', 'Vert sauge', '#8fb39a'], ['rose', 'Rose', '#e98aa0']], desc: 'Une lumière orange qui pardonne tout.' },   // 30
+  pouf:      { name: 'Pouf moutarde', price: 12, slot: 'f', variants: [['', 'Moutarde', '#e2a52e'], ['vert', 'Vert plaid', '#3f8f5f'], ['rose', 'Rose poudré', '#e7a3b4'], ['bleu', 'Bleu nuit', '#35426c']], desc: 'Personne ne s’assoit dessus. Tout le monde y pose ses pieds.' },   // 40
+  vinyle:    { name: 'Platine vinyle', price: 22, slot: 't', desc: 'Le disque craque. C’est fait exprès. Paraît-il.' },   // 90
+  console:   { name: 'Console de jeux', price: 100, slot: 't', desc: 'Les soirées jeux rapportent +1 ❤. Et des accusations de triche.' },   // 150 (−33 %)
+  affiche:   { name: 'Affiche « Le Grand Soir »', price: 4, slot: 'w', who: 'leo', desc: 'Un film qui n’existe pas encore. Léo y travaille.' },   // 20
+  cafe:      { name: 'Machine à café', price: 45, slot: 't', who: 'leo', desc: '+20 € par journée de dossier. La caféine est un levier.' },   // 70 (−36 %)
+  camera:    { name: 'Caméra sur trépied', price: 80, slot: 'f', who: 'leo', desc: 'Le projet ciné avance plus vite (+1 🎬).' },   // 120 (−33 %)
+  stetho:    { name: 'Stéthoscope', price: 30, slot: 'w', who: 'leonore', med: true, desc: '+15 € par garde. Le cœur de Léo monte à 110 quand tu l’écoutes.' },   // 45 (−33 %)
+  atlas:     { name: 'Atlas d’anatomie', price: 24, slot: 't', who: 'leonore', med: true, desc: 'Réviser rapporte +1 🩺.' },   // 35 (−31 %)
+  marteau:   { name: 'Marteau réflexe', price: 5, slot: 't', who: 'leonore', med: true, desc: 'Pour tester les réflexes de Léo. Ils sont nuls.' },   // 15
+  squelette: { name: 'Squelette « Jean-Michel »', price: 55, slot: 'f', who: 'leonore', med: true, desc: 'Réviser rapporte +1 🩺. Mathys refuse de dormir à côté.' },   // 80 (−31 %)
+  horloge:   { name: 'Horloge murale', price: 7, slot: 'w', desc: 'Léo l’a réglée à la seconde. Léonore ne la regarde jamais.' },   // 25
+  etagere:   { name: 'Étagère à plantes', price: 10, slot: 'w', desc: 'Trois livres, une plante, et de la place pour exposer un souvenir.' },   // 45
+  guitare:   { name: 'Guitare', price: 18, slot: 'f', desc: 'Personne n’en joue. Aaron, si. Très doucement.' },   // 70
+  popcorn:   { name: 'Machine à pop-corn', price: 9, slot: 't', desc: 'Pour les soirées séries. Léo ramasse chaque grain tombé.' },   // 35
+  miroir:    { name: 'Miroir sur pied', price: 15, slot: 'f', desc: 'Pour vérifier une tenue. Ou une boucle rebelle.' },   // 55
+  robot:     { name: 'Aspirateur robot « Roberto »', price: 22, slot: 'f', who: 'leo', desc: 'Léo le suit des yeux. Puis il repasse derrière.' },   // 110
+  sorcier:   { name: 'Affiche « École de sorciers »', price: 4, slot: 'w', who: 'leonore', desc: 'Accrochée en face du canapé. Léo ne peut plus faire comme s’il n’avait rien vu.' },   // 15
+  panier:    { name: 'Panier du chien', price: 9, slot: 'f', stage: 1, desc: 'Le chien dort sur le canapé. Mathys a essayé le panier.' },   // 40
+  aquarium:  { name: 'Aquarium', price: 25, slot: 'f', stage: 1, desc: 'Deux poissons. Léonore surveille leur état général.' },   // 200
+  biblio:    { name: 'Bibliothèque', price: 25, slot: 'f', stage: 1, desc: 'Moitié médecine, moitié scénarios, un rayon BD contesté.' },   // 250
+  babyfoot:  { name: 'Baby-foot', price: 35, slot: 'f', stage: 2, desc: 'Les deux pères s’y affrontent à chaque visite.' },   // 600
+  piano:     { name: 'Piano droit', price: 45, slot: 'f', stage: 2, desc: 'Personne ne sait en jouer. Pour l’instant.' },   // 900
+  disco:     { name: 'Boule à facettes', price: 30, slot: 'w', stage: 3, desc: 'Indispensable pour une grande soirée.' },   // 800
+  armure:    { name: 'Armure « Sir Jean-Michel II »', price: 45, slot: 'f', stage: 3, desc: 'Un manoir sans armure, c’est une grande maison.' },   // 1 500
   broderie:  { name: 'Broderie de Mathys', gift: true, slot: 'w' },
   super8:    { name: 'Projecteur Super 8', gift: true, slot: 't' },
   nokia:     { name: 'Nokia 3310 de Stéphane', gift: true, slot: 't', desc: 'Vingt-cinq ans, 60 % de batterie. Stéphane l’a « un peu optimisé ».' },
   sanglier:  { name: 'Tête de sanglier', gift: true, slot: 'w', desc: 'Trouvée par Laurent à la brocante. « Elle te regardait. Je pouvais pas la laisser. »' },
-  flipper:   { name: 'Flipper de 1978', gift: true, slot: 'f', desc: 'Cadeau de Laurent. Il a fallu quatre potes et une porte démontée pour le rentrer.' }
+  flipper:   { name: 'Flipper de 1978', gift: true, slot: 'f', desc: 'Cadeau de Laurent. Il a fallu quatre potes et une porte démontée pour le rentrer.' },
+  /* Le kit du coin à soi : gratuit, simple, pour commencer tôt */
+  coussin:   { name: 'Gros coussin de sol', price: 0, coin: true, slot: 'f', variants: [['', 'Vert plaid', '#4d9d6b'], ['rose', 'Rose', '#e7a3b4'], ['moutarde', 'Moutarde', '#e2a52e']], desc: 'Pour lire par terre. Ou ne rien faire par terre, c’est pareil.' },
+  veilleuse: { name: 'Petite veilleuse', price: 0, coin: true, slot: 't', desc: 'Une lumière de la taille d’une mandarine.' },
+  cadre:     { name: 'Cadre à carte postale', price: 0, coin: true, slot: 'w', desc: 'Il attend la bonne carte. Ou un ticket. Ou un dessin.' },
+  /* Objets d'histoire : reçus en jouant (paquet de souvenirs), jamais vendus. Noms génériques, le paquet peut les personnaliser. */
+  sousbock:  { name: 'Sous-bock', story: true, slot: 't', desc: 'Un sous-bock gardé. Il y a une histoire derrière.' },
+  bouleNeige:{ name: 'Boule à neige', story: true, slot: 't', desc: 'On la secoue, il neige. Exactement comme ce jour-là.' },
+  ticket:    { name: 'Ticket encadré', story: true, slot: 'w', desc: 'Un ticket de métro dans un cadre. Mauvais arrêt, bonne soirée.' },
+  calendrier:{ name: 'Calendrier entouré', story: true, slot: 'w', desc: 'Une date entourée deux fois.' },
+  tasse:     { name: 'Mug', story: true, slot: 't', desc: 'Café le matin, thé glacé l’après-midi.' },
+  marquepage:{ name: 'Deux marque-pages', story: true, slot: 't', desc: 'Deux marque-pages, une même adresse.' },
+  lunettes:  { name: 'Lunettes', story: true, slot: 't', desc: 'Leur place, c’est la table de nuit. Pas sur le nez à minuit.' },
+  bottines:  { name: 'Bottines marron', story: true, slot: 'f', desc: 'Elles ont fait beaucoup de trottoirs.' },
+  briques:   { name: 'Figurine en briques', story: true, slot: 't', desc: 'Construite à deux, brique par brique.' },
+  carafe:    { name: 'Carafe poisson', story: true, slot: 't', desc: 'Redresse-la : elle fait glouglou.' },
+  carte:     { name: 'Mot plié', story: true, slot: 't', desc: 'Un mot gardé longtemps avant d’être donné.' },
+  carnet:    { name: 'Carnet de stage', story: true, slot: 't', desc: 'Six semaines, des pages cornées.' },
+  cle:       { name: 'Clé sur un crochet', story: true, slot: 'w', desc: 'Une clé qui n’ouvre encore rien. Pas encore.' },
+  plan:      { name: 'Plan à deux', story: true, slot: 'w', desc: 'Un plan dessiné à deux, au crayon.' }
 };
 
 const THE = { plante: 'la monstera « Gérard »', guirlande: 'la guirlande lumineuse', photo: 'la photo de vous deux', lampe: 'la lampe champignon', pouf: 'le pouf moutarde', vinyle: 'la platine vinyle', console: 'la console de jeux', affiche: 'l’affiche du « Grand Soir »', cafe: 'la machine à café', camera: 'la caméra sur trépied', stetho: 'le stéthoscope', atlas: 'l’atlas d’anatomie', marteau: 'le marteau réflexe', squelette: 'Jean-Michel, le squelette', horloge: 'l’horloge murale', etagere: 'l’étagère à plantes', guitare: 'la guitare', popcorn: 'la machine à pop-corn', miroir: 'le miroir sur pied', robot: 'Roberto, l’aspirateur robot', sorcier: 'l’affiche de l’école de sorciers', panier: 'le panier du chien', aquarium: 'l’aquarium', biblio: 'la bibliothèque', babyfoot: 'le baby-foot', piano: 'le piano', disco: 'la boule à facettes', armure: 'l’armure' };
@@ -1163,6 +1259,16 @@ const HS = {
   escalier: ['Le grand escalier. Tapis rouge, comme la porte. Léo dit que c’est « une cohérence de mise en scène ».'],
   lustre: ['Le lustre. Laurent pense qu’on peut « le passer en LED pour pas cher ».'],
   biblio: ['La bibliothèque du manoir. Un des livres ne se retire pas. Tiens.'],
+  fauteuilCoin: ['Son fauteuil. Le seul endroit de l’appart où personne ne range rien.'],
+  livresCoin: ['Ses livres à elle. Pas de médecine sur cette étagère, c’est la règle.', 'Un marque-page dépasse de chaque livre. Elle les lit tous en même temps.'],
+  cerisier: ['Le cerisier. Il était là avant vous et fait comme si de rien n’était.'],
+  potager: ['Le potager. Quatre tomates, deux herbes, un débat sur l’arrosage.'],
+  transats: ['Deux transats. Le rouge est à elle. Le bleu aussi, quand il fait beau.'],
+  tableJardin: ['La table de jardin. Elle a déjà vu des dîners, des fiches de révision et un scénario raturé.'],
+  vitrine: ['Le musée de vos débuts : tickets, post-its, objets. Rien n’a de valeur. Tout est inestimable.'],
+  ecran: ['Un écran, deux fauteuils, la meilleure salle de Paris. Ou presque.'],
+  fauteuilsProj: ['Deux fauteuils rouges. Réservés. Pour toujours.'],
+  cachette: ['La cachette. Personne ne sait qu’elle existe. Surtout pas Mathys.'],
   pp_mathys: ['« Il y a un courant d’air. Quelqu’un a ouvert une fenêtre en 2019 et je ne m’en suis jamais remis. »', '« Je ne suis pas à moitié nu. Je suis à moitié habillé. Nuance. »', '« Ta vaisselle à toi, elle sèche. La mienne, elle mûrit. »', '« J’ai éternué. Note l’heure. »', '« Le voisin a dit bonjour trop fort. Je le consigne. »', '« Je ne me plains pas. Je documente. »'],
   pp_kid: ['« Pourquoi le chien en pierre il bouge pas ? »', '« Tonton Mathys a dit un gros mot. Il a dit que c’était “un terme technique”. »'],
   pet: ['Il te regarde. Tu es jugé.', 'Il a volé une chaussette. On soupçonne une complicité de Mathys.']
@@ -1563,6 +1669,15 @@ const OBJ = {
   lustre: [{ k: 'lustre', label: 'Allumer le lustre', fx: { m: 1 }, t: 'Quarante ampoules. Le compteur fait un bruit. Quelque part, Stéphane a senti quelque chose.' }],
   biblio: [{ k: 'livre', label: 'Tirer un livre', fx: { m: 1 }, t: 'Le livre résiste. C’est le troisième qui fait ça. Ce manoir a des secrets, ou de l’humidité.' }],
   pet: [{ k: 'caresse', label: 'Le caresser', fx: { m: 2 }, t: 'Il se met sur le dos. Il n’a aucune dignité. C’est pour ça qu’on l’aime.' }],
+  /* v2 : le coin à soi, le jardin, la pièce secrète */
+  fauteuilCoin: [{ k: 'lire', label: 'Lire dans son coin', fx: { m: 2, e: 1 }, t: { leonore: 'Elle se cale dans le fauteuil, les genoux sous le plaid. Vingt pages. Personne ne lui parle de symptômes.', leo: 'Il s’assoit dans SON fauteuil à elle. Il se relève. Il sait qu’il y a des lois.' } }],
+  cerisier: [{ k: 'cerisier', label: 'Se poser sous le cerisier', fx: { m: 2 }, t: 'Dos contre le tronc. Une feuille tombe sur ses lunettes. Elle la garde.' }],
+  potager: [{ k: 'arroser', label: 'Arroser le potager', fx: { m: 1, h: 1 }, t: { leo: 'Il arrose au millilitre près. Il a fait un tableau. Les tomates s’en fichent.', leonore: 'Elle arrose tout, y compris ses pieds. Elle croque une tomate cerise au passage.' } }],
+  transats: [{ k: 'soleil', label: 'Une sieste au soleil', fx: { e: 2, m: 1 }, t: 'Deux transats, un rouge, un bleu. Elle s’endort la première. Il fait semblant de lire pour la regarder dormir.' }],
+  tableJardin: [{ k: 'diner', label: 'Dîner dehors', fx: { h: 4, m: 2 }, t: 'Une salade, du pain, la lumière qui baisse. Les voisins mangent dehors aussi. Tout le monde fait comme si on ne s’entendait pas.' }],
+  vitrine: [{ k: 'musee', label: 'Regarder une vitrine', special: 'memory' }],
+  ecran: [{ k: 'projo', label: 'Projeter un souvenir', special: 'memory' }],
+  cachette: [{ k: 'cache', label: 'Se cacher à deux', fx: { m: 3 }, t: 'Les coussins, les guirlandes, la porte qui se referme sans bruit. Dehors, quelqu’un les appelle. Ils ne répondent pas tout de suite.' }],
   pp_mathys: [{ k: 'engueuler', label: 'L’engueuler un bon coup', fx: { m: 2 }, t: 'Elle lui dit tout : la chasse, la vaisselle, le caleçon. Il écoute jusqu’au bout. « T’as fini ? Parce que t’as pas parlé des poubelles, et là j’avoue. »', inc: 'Léonore m’a crié dessus quatre minutes. Elle a oublié les poubelles. Amateur.' },
     { k: 'check', label: 'Lui faire un check', fx: { m: 1 }, t: 'Il regarde sa main. Il regarde la tienne. Il tape. Mollement. C’est énorme, venant de lui.' }],
   pp_partner: [{ k: 'calin', label: 'Câlin', fx: { m: 2, e: 1 }, t: { leo: '« Viens là, matecito. » Il la serre. Elle dit « tu m’écrases mes lunettes ». Elle ne bouge pas.', leonore: '« Beaugossito. » Elle se cale contre lui. Il sent le bureau et le café. Ça lui va.' } },
@@ -1609,7 +1724,7 @@ function newMail() { const n = (S.counters.mail = (S.counters.mail || 0) + 1) - 
 /* Arrivages : le matériel utile est toujours là, la déco tourne chaque jour */
 const SHOP_ALWAYS = ['stetho', 'atlas', 'marteau', 'squelette', 'cafe', 'camera', 'console'];
 function shopToday(who) {
-  const all = Object.entries(ITEMS).filter(([id, it]) => !it.gift && (it.stage || 0) <= S.stage && (!it.who || it.who === who) && !has(id));
+  const all = Object.entries(ITEMS).filter(([id, it]) => !it.gift && !it.story && !it.coin && (it.stage || 0) <= S.stage && (!it.who || it.who === who) && !has(id));
   return { fixed: all.filter(([id]) => SHOP_ALWAYS.includes(id)), deco: all.filter(([id]) => !SHOP_ALWAYS.includes(id)) };
 }
 
@@ -2952,6 +3067,7 @@ function sfx(name) {
     if (name === 'pop') tone(300, .12, 'triangle', .09);
     if (name === 'bad') tone(140, .25, 'sawtooth', .05);
     if (name === 'love') { tone(660, .12, 'sine', .06); tone(880, .22, 'sine', .06, .1); }
+    if (name === 'glouglou') [0, .13, .24, .33, .41].forEach((at, i) => { const f0 = 520 - i * 50 + Math.random() * 40; const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(f0, t + at); o.frequency.exponentialRampToValueAtTime(f0 * 1.9, t + at + .07); g.gain.setValueAtTime(.05, t + at); g.gain.exponentialRampToValueAtTime(.0001, t + at + .09); o.connect(g).connect(AC.destination); o.start(t + at); o.stop(t + at + .1); });
     if (name === 'fanfare') [523, 659, 784, 1047].forEach((f, i) => tone(f, .24, 'triangle', .06, i * .13));
     if (name === 'flush') {
       const len = AC.sampleRate * 2.2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
@@ -3405,6 +3521,224 @@ const MOTS_LEO = [
   'Je t’aime, matecito. Voilà. C’est écrit, c’est sauvegardé. Signé : beaugossito.'
 ];
 
+/* ===== decor.js ===== */
+/* =====================================================================
+   DÉCOR — src/decor.js : inventaire (placé / rangé), placement sans
+   empilement, mode Décorer (deux tapotements ou glisser-déposer),
+   ambiance par pièce (murs, sol, tapis, rideaux, lumière), variantes.
+   Un objet rangé garde ses effets : has() ne regarde que la possession.
+   ===================================================================== */
+const FLOORS = [['', 'Comme avant'], ['miel', 'Parquet miel', 'parquet', '#e3c896', '#d3b680'], ['fonce', 'Parquet foncé', 'parquet', '#9b6b43', '#865a35'], ['clair', 'Chêne clair', 'parquet', '#efe0c2', '#dccaa6'],
+  ['gris', 'Carrelage gris', 'tiles', '#cdd0d5', '#b9bdc4'], ['tomette', 'Tomettes', 'tiles', '#c8714f', '#b1603f'], ['damier', 'Damier', 'checker', '#f3efe6', '#23262d']];
+const RUGS = [['', 'Comme avant'], ['beige', 'Rond beige', '#ead9bd', '#d6c3a0', 'dash'], ['raye', 'Rayé bleu', '#dfe8f2', '#6f8fb8', 'stripe'], ['berbere', 'Berbère', '#f4efe6', '#3a2a20', 'berb'], ['plaid', 'Vert plaid', '#cfe3d5', '#3f8f5f', 'stripe'], ['rose', 'Rose poudré', '#f5dede', '#d9a6a6', 'dash']];
+const CURTAINS = [['', 'Comme avant'], ['#e6d6b8', 'Lin'], ['#c94f4f', 'Rouge'], ['#3f8f5f', 'Vert sapin'], ['#8fb8e8', 'Bleu ciel'], ['#f5dede', 'Rose poudré']];
+const LIGHTS = [['', 'Lumière du jour'], ['chaude', 'Chaude'], ['tamisee', 'Tamisée'], ['bougies', 'Bougies']];
+const WALLS_ROOM = [['', 'Comme avant', ''], ['#dde7da', 'Vert sauge'], ['#f0d6c4', 'Terracotta'], ['#d9e3ee', 'Bleu gris'], ['#f6ecc6', 'Jaune beurre'], ['#f5dede', 'Rose poudré'], ['#f7f3ea', 'Blanc cassé'], ['#353a5e', 'Bleu nuit'], ['#5a3340', 'Bordeaux']];
+
+/* Réglage de la pièce en cours de dessin (ART.curKey est posé par renderScene). */
+const roomSet = k => { const r = S && S.decor && S.decor.rooms[ART.curKey]; return r ? r[k] : undefined; };
+ART.curKey = '';
+ART.floor = () => { const v = roomSet('floor'); return v ? FLOORS.find(f => f[0] === v) || null : null; };
+ART.curtain = c => roomSet('curtain') || c;
+ART.rug = () => roomSet('rug') || '';
+ART.wallR = d => roomSet('wall') || d;
+
+const roomAvail = (H, ri) => { const r = H.rooms[ri]; return !!r && (!r.avail || !!r.avail()); };
+/** Objets du foyer affiché : à deux apparts, chacun chez soi ; les cadeaux communs peuvent aller chez l'un ou l'autre. */
+function homeItems(home) {
+  return S.items.filter(i => S.stage > 0 ? true : home === 'coloc' ? i.owner === 'leonore' || i.owner === 'both' : home === 'ardennes' ? i.owner === 'leo' || i.owner === 'both' : false)
+    .filter(i => !(S.stage === 0 && i.owner === 'both' && i.home && i.home !== home));
+}
+const SLOT_Y = { w: [24, 176], f: [196, 300], t: [90, 300], g: [-1e9, 1e9] };
+function placedValid(rec, home) {
+  const it = ITEMS[rec.id], H = ROOMS[home];
+  return !!it && rec.home === home && typeof rec.x === 'number' && typeof rec.y === 'number' && Number.isInteger(rec.room) && roomAvail(H, rec.room) &&
+    rec.x >= 0 && rec.x <= 360 && rec.y >= SLOT_Y[it.slot][0] && rec.y <= SLOT_Y[it.slot][1];
+}
+/** Où va chaque objet du logement. Les placements manuels valides passent d'abord ; le placement
+    automatique n'empile jamais deux objets ; ce qui ne trouve pas de place reste dans l'inventaire.
+    Renvoie un tableau par pièce, avec .status = {id: {st:'placed'|'stored'|'full', room}}. */
+function placeItems(home) {
+  const H = ROOMS[home], out = H.rooms.map(() => []), status = {}, list = homeItems(home);
+  const near = (ri, x, y) => out[ri].some(p => !p.g && Math.abs(p.x - x) < 16 && Math.abs(p.y - y) < 14);
+  for (const rec of list) {
+    const it = ITEMS[rec.id]; if (!it) continue;
+    if (rec.stored) { status[rec.id] = { st: 'stored' }; continue; }
+    if (it.slot === 'g') { if (S.stage === 0 && rec.owner === 'both' && rec.home !== home) continue; const ri = rec.home === home && roomAvail(H, rec.room) ? rec.room : 0; out[ri].push({ id: rec.id, g: true }); status[rec.id] = { st: 'placed', room: ri }; continue; }
+    if (placedValid(rec, home)) { out[rec.room].push({ id: rec.id, x: rec.x, y: rec.y, manual: true }); status[rec.id] = { st: 'placed', room: rec.room }; }
+  }
+  for (const rec of list) {
+    const it = ITEMS[rec.id]; if (!it || status[rec.id]) continue;
+    if (S.stage === 0 && rec.owner === 'both') { status[rec.id] = { st: 'stored' }; continue; }
+    const order = H.rooms.map((_, i) => i).filter(i => roomAvail(H, i) && H.rooms[i].auto !== false); if (it.med && order.length > 1) order.reverse();
+    let done = false;
+    for (const ri of order) {
+      for (const [x, y] of (H.rooms[ri].slots[it.slot] || [])) if (!near(ri, x, y)) { out[ri].push({ id: rec.id, x, y }); status[rec.id] = { st: 'placed', room: ri, auto: true }; done = true; break; }
+      if (done) break;
+    }
+    if (!done) status[rec.id] = { st: 'full' };
+  }
+  out.status = status;
+  return out;
+}
+const variantOf = id => { const it = ITEMS[id], v = S.decor.variants[id]; if (!it || !it.variants) return undefined; const f = it.variants.find(x => x[0] === (v || '')); return f ? f[2] : undefined; };
+/** Surfaces où poser un petit objet : les meubles de la pièce, et les étagères accrochées. */
+function surfacesOf(home, ri, placed) {
+  const H = ROOMS[home], list = (H.rooms[ri].slots.t || []).map(([x, y]) => ({ x, y, k: 'meuble' }));
+  for (const p of placed || []) if (p.id === 'etagere') list.push({ x: p.x + 12, y: p.y + 6, k: 'étagère' });
+  return list;
+}
+function itemArt(p, placedInRoom) {
+  if (p.g) return ITEM_ART[p.id](0, 0, null, S.decor.on[p.id] === false);
+  if (p.id === 'etagere' && (placedInRoom || []).some(q => q.id !== 'etagere' && ITEMS[q.id] && ITEMS[q.id].slot === 't' && Math.abs(q.x - (p.x + 12)) < 7 && Math.abs(q.y - (p.y + 6)) < 7))
+    return ITEM_ART.etagere(p.x, p.y).replace(/<path d="M10,6 l-2,-7 h8 l-2,7Z"[^>]*\/><path d="M12,-1[^>]*\/>/, '');
+  return ITEM_ART[p.id](p.x, p.y, variantOf(p.id));
+}
+
+/* ---------- Mode Décorer ---------- */
+function openDecor(sel) {
+  if (UI.busy || !S) return;
+  const h = homeId(), H = ROOMS[h];
+  if (!roomAvail(H, UI.room)) UI.room = 0;
+  // à l'ouverture, on se place dans le coin à elle s'il existe et qu'aucune pièce n'est choisie
+  UI.decor = { home: h, sel: sel || null, undo: [], back: UI.tab === 'decor' ? 'day' : UI.tab, msg: '' };
+  if (sel) { const st = placeItems(h).status[sel]; if (st && st.room != null) UI.room = st.room; }
+  UI.tab = 'decor'; closeBubble(); document.body.classList.add('decormode');
+  if (S.flags.justMoved != null) delete S.flags.justMoved;
+  render();
+}
+function closeDecor() { if (!UI.decor) return; UI.tab = UI.decor.back || 'day'; UI.decor = null; document.body.classList.remove('decormode'); commit('decor:done'); render(); }
+function decorSnap() { if (!UI.decor) return; UI.decor.undo.push(JSON.stringify({ items: S.items, decor: S.decor })); if (UI.decor.undo.length > 30) UI.decor.undo.shift(); }
+function decorUndo() {
+  const D0 = UI.decor; if (!D0 || !D0.undo.length) return;
+  const o = JSON.parse(D0.undo.pop()); S.items = o.items; S.decor = o.decor; D0.sel = null; D0.msg = 'Dernier changement annulé.';
+  sfx('tap'); commit('decor:undo'); render();
+}
+const decorMsg = (t, bad) => { if (UI.decor) { UI.decor.msg = t; UI.decor.bad = !!bad; if (bad) { sfx('bad'); setTimeout(() => { if (UI.decor) renderPanel(); }, 0); } } };
+/** Pose un objet à un point de la pièce affichée, après contrôle de la zone (mur, sol, surface). */
+function tryPlace(id, pt) {
+  const D0 = UI.decor, rec = S.items.find(i => i.id === id), it = ITEMS[id]; if (!D0 || !rec || !it) return false;
+  const h = D0.home, ri = UI.room, all = placeItems(h), placed = all[ri].filter(p => p.id !== id);
+  let x = Math.round(Math.max(18, Math.min(342, pt.x))), y = Math.round(pt.y);
+  if (it.slot === 'w') { if (y > 184) { decorMsg(`${itemName(id)} s’accroche au mur : touche plus haut.`, true); return false; } y = Math.max(30, Math.min(170, y)); }
+  else if (it.slot === 'f') { if (y < 186) { decorMsg(`${itemName(id)} se pose au sol : touche plus bas.`, true); return false; } y = Math.max(206, Math.min(296, y + 8)); }
+  else if (it.slot === 't') {
+    const sf = surfacesOf(h, ri, placed).map(s => ({ ...s, d: Math.hypot(s.x - pt.x, s.y - pt.y) })).sort((a, b) => a.d - b.d)[0];
+    if (!sf || sf.d > 70) { decorMsg(sf ? `${itemName(id)} se pose sur un meuble ou une étagère : vise un cercle en pointillés.` : 'Pas de meuble où le poser dans cette pièce. Accroche une étagère, ou change de pièce.', true); return false; }
+    x = sf.x; y = sf.y; if (placed.some(p => Math.abs(p.x - x) < 7 && Math.abs(p.y - y) < 7)) x += 13;
+  } else { x = 180; y = 0; }
+  decorSnap();
+  rec.home = h; rec.room = ri; rec.x = x; rec.y = y; delete rec.stored;
+  D0.sel = null; decorMsg(`${itemName(id)} : posé${it.slot === 't' ? ' sur ' + (y < 100 ? 'l’étagère' : 'le meuble') : ''}.`);
+  sfx('pop'); commit('decor:place:' + id); render(); return true;
+}
+function decorStore(id) {
+  const rec = S.items.find(i => i.id === id); if (!rec) return;
+  decorSnap(); rec.stored = true; if (UI.decor) UI.decor.sel = null; decorMsg(`${itemName(id)} : rangé. Il garde ses effets.`);
+  sfx('tap'); commit('decor:store:' + id); render();
+}
+/** Ressortir : à son ancienne place si elle est valable ici, sinon dans une place libre de la pièce affichée. */
+function decorTakeOut(id) {
+  const rec = S.items.find(i => i.id === id), it = ITEMS[id], D0 = UI.decor; if (!rec || !it || !D0) return;
+  decorSnap(); delete rec.stored;
+  if (!placedValid(rec, D0.home)) {
+    const H = ROOMS[D0.home], out = placeItems(D0.home), placed = out[UI.room].filter(p => p.id !== id);
+    const free = it.slot === 'g' ? [[180, 0]] : (it.slot === 't' ? surfacesOf(D0.home, UI.room, placed).map(s => [s.x, s.y]) : H.rooms[UI.room].slots[it.slot] || []).find(([x, y]) => !placed.some(p => !p.g && Math.abs(p.x - x) < 16 && Math.abs(p.y - y) < 14));
+    if (free) { rec.home = D0.home; rec.room = UI.room; rec.x = free[0]; rec.y = free[1]; decorMsg(`${itemName(id)} : ressorti.`); }
+    else { rec.stored = true; D0.sel = id; decorMsg(`Plus de place libre prévue ici pour ${itemName(id)} : touche l’endroit où le poser.`, true); sfx('tap'); commit('decor'); return render(); }
+  } else decorMsg(`${itemName(id)} : de retour à sa place.`);
+  sfx('pop'); commit('decor:out:' + id); render();
+}
+function decorSet(kind, val) {
+  const D0 = UI.decor; if (!D0) return; decorSnap();
+  const key = D0.home + ':' + UI.room, r = S.decor.rooms[key] = S.decor.rooms[key] || {};
+  if (val) r[kind] = val; else delete r[kind];
+  sfx('tap'); commit('decor:room'); renderScene(); renderPanel();
+}
+function decorVariant(id, v) { if (!UI.decor) return; decorSnap(); if (v) S.decor.variants[id] = v; else delete S.decor.variants[id]; sfx('tap'); commit('decor:variant'); renderScene(); renderPanel(); }
+function decorTap(e) {
+  const D0 = UI.decor; if (D0.ignoreClick) { D0.ignoreClick = false; return; }
+  const pt = svgPoint(e), el = e.target.closest('[data-hs^="item_"]');
+  if (D0.sel) return tryPlace(D0.sel, pt);
+  if (el) { D0.sel = el.dataset.hs.slice(5); decorMsg(`${itemName(D0.sel)} : touche le nouvel endroit, ou glisse-le.`); sfx('tap'); render(); return; }
+  decorMsg('Choisis un objet dans l’inventaire, puis touche l’endroit où le poser.');
+  renderPanel();
+}
+/* Glisser-déposer (souris ou doigt) : complète les deux tapotements. */
+let decorDrag = null;
+function decorPointerDown(e) {
+  if (!UI.decor) return; const el = e.target.closest('[data-hs^="item_"]'); if (!el || el.dataset.g) return;
+  decorDrag = { id: el.dataset.hs.slice(5), el, p0: svgPoint(e), ix: +el.dataset.ix, iy: +el.dataset.iy, moved: false, pid: e.pointerId };
+}
+function decorPointerMove(e) {
+  const d = decorDrag; if (!d) return; const p = svgPoint(e), dx = p.x - d.p0.x, dy = p.y - d.p0.y;
+  if (!d.moved && Math.hypot(dx, dy) < 6) return;
+  if (!d.moved) { d.moved = true; try { $('#scene').setPointerCapture(d.pid); } catch (err) {} }
+  e.preventDefault();
+  d.el.setAttribute('transform', `translate(${dx},${dy})`); d.el.classList.add('dragging');
+}
+function decorPointerUp(e) {
+  const d = decorDrag; decorDrag = null; if (!d || !d.moved || !UI.decor) return;
+  const p = svgPoint(e); UI.decor.ignoreClick = true; setTimeout(() => { if (UI.decor) UI.decor.ignoreClick = false; }, 400);
+  if (!tryPlace(d.id, { x: d.ix + (p.x - d.p0.x), y: d.iy + (p.y - d.p0.y) })) render();
+}
+function decorThumb(id) {
+  const it = ITEMS[id]; if (!it) return '';
+  return `<svg viewBox="${{ g: '-34 -78 68 84', w: '-28 -29 56 58', t: '-27 -31 54 36', f: '-34 -78 68 84' }[it.slot]}" class="thumb">${it.slot === 'g' ? `<g transform="translate(-34,-60) scale(.19)">${ITEM_ART[id]()}</g>` : ITEM_ART[id](0, 0, variantOf(id))}</svg>`;
+}
+function decorPanel() {
+  const D0 = UI.decor, h = D0.home, H = ROOMS[h], ri = UI.room, out = placeItems(h), stt = out.status, rs = S.decor.rooms[h + ':' + ri] || {};
+  const list = homeItems(h);
+  let x = `<div class="hello"><h2>🎨 Décorer <small>${esc(H.name)}</small></h2><p>Choisis un objet, puis touche l’endroit où le poser. Tu peux aussi le faire glisser dans la pièce.</p></div>`;
+  x += `<div class="row decoBar"><button class="ghost" data-dundo="1" ${D0.undo.length ? '' : 'disabled'}>↶ Annuler</button><button class="primary" data-ddone="1">✔ Terminer</button></div>`;
+  if (D0.msg) x += `<p class="decoMsg ${D0.bad ? 'bad' : ''}" role="status">${esc(D0.msg)}</p>`;
+  if (D0.sel) { const it = ITEMS[D0.sel]; x += `<div class="tip decoSel">${decorThumb(D0.sel)}<span><b>${esc(itemName(D0.sel))}</b><br>${{ w: 'Touche le mur', f: 'Touche le sol', t: 'Touche un cercle en pointillés (meuble ou étagère)', g: 'Touche la pièce pour l’y suspendre' }[it.slot]}.</span><button class="ghost" data-dsel="">Annuler</button></div>`; }
+  const rooms = H.rooms.map((r, i) => [r, i]).filter(([, i]) => roomAvail(H, i));
+  if (rooms.length > 1) x += `<h3>Pièce</h3><div class="chips">` + rooms.map(([r, i]) => `<button class="chip ${i === ri ? 'on' : ''}" data-room="${i}">${r.coin ? '⭐ ' : ''}${esc(r.name)}</button>`).join('') + `</div>`;
+  x += `<h3>Inventaire <span class="dots">${list.length} objet${list.length > 1 ? 's' : ''}</span></h3>`;
+  if (!list.length) x += `<p class="done">Encore rien. Le kit du coin est gratuit dans la Boutique, et les souvenirs apportent leurs objets.</p>`;
+  x += list.map(rec => {
+    const id = rec.id, it = ITEMS[id], s0 = stt[id] || { st: 'stored' }; if (!it) return '';
+    const where = s0.st === 'placed' ? `Placé · ${esc(H.rooms[s0.room].name)}` : s0.st === 'full' ? 'Rangé · pas de place libre' : 'Rangé';
+    const vars = it.variants ? `<div class="chips mini vars">${it.variants.map(([k, n, c]) => `<button class="chip ${(S.decor.variants[id] || '') === k ? 'on' : ''}" data-dvar="${id}:${k}" aria-label="${esc(n)}"><i style="background:${c}"></i>${esc(n)}</button>`).join('')}</div>` : '';
+    return `<div class="item inv ${D0.sel === id ? 'sel' : ''} ${s0.st}">${decorThumb(id)}<div class="tx"><b>${esc(itemName(id))}</b><i>${where}${it.story ? ' · souvenir' : ''}</i></div><div class="invB">` +
+      `<button data-dpick="${id}">${s0.st === 'placed' ? 'Déplacer' : 'Placer'}</button>` +
+      (s0.st === 'placed' ? `<button class="sec" data-dstore="${id}">Ranger</button>` : `<button class="sec" data-dout="${id}">Ressortir</button>`) + `</div>${vars}</div>`;
+  }).join('');
+  const chips = (kind, opts, cur, sw) => `<div class="chips">` + opts.map(o => `<button class="chip ${(cur || '') === o[0] ? 'on' : ''}" data-dset="${kind}:${o[0]}">${sw ? `<i style="background:${sw(o)}"></i>` : ''}${esc(o[1])}</button>`).join('') + `</div>`;
+  x += `<h3>Ambiance de la pièce <span class="dots">aperçu en direct</span></h3>`;
+  x += `<p class="lk">Murs</p>` + chips('wall', WALLS_ROOM, rs.wall, o => o[0] || '#f4efe6');
+  x += `<p class="lk">Sol</p>` + chips('floor', FLOORS, rs.floor, o => o[3] || '#e3c896');
+  x += `<p class="lk">Tapis</p>` + chips('rug', RUGS, rs.rug, o => o[2] || '#ead9bd');
+  x += `<p class="lk">Rideaux</p>` + chips('curtain', CURTAINS, rs.curtain, o => o[0] || '#e6d6b8');
+  x += `<p class="lk">Lumière</p>` + chips('light', LIGHTS, rs.light);
+  x += `<div class="row decoBar"><button class="ghost" data-dundo="1" ${D0.undo.length ? '' : 'disabled'}>↶ Annuler</button><button class="primary" data-ddone="1">✔ Terminer</button></div>`;
+  return x;
+}
+/** Calque de la scène en mode Décorer : zones valides pour l'objet choisi. */
+function decorOverlay(h, ri, placed) {
+  const D0 = UI.decor; if (!D0 || !D0.sel || !ITEMS[D0.sel]) return '';
+  const sl = ITEMS[D0.sel].slot;
+  if (sl === 'w') return `<rect x="8" y="22" width="344" height="156" rx="10" class="zone"/>`;
+  if (sl === 'f') return `<rect x="8" y="198" width="344" height="98" rx="10" class="zone"/>`;
+  if (sl === 't') return surfacesOf(h, ri, placed.filter(p => p.id !== D0.sel)).map(s => `<circle cx="${s.x}" cy="${s.y - 6}" r="15" class="zone"/>`).join('');
+  return '';
+}
+/* Lumière choisie pour la pièce. */
+function lightLayer() {
+  const l = roomSet('light');
+  if (l === 'chaude') return `<rect width="360" height="300" fill="#ff9d4d" opacity=".12" pointer-events="none"/>`;
+  if (l === 'tamisee') return `<rect width="360" height="300" fill="#1b2236" opacity=".24" pointer-events="none"/><circle cx="180" cy="120" r="150" fill="url(#glow)" opacity=".7" pointer-events="none"/>`;
+  if (l === 'bougies') return `<rect width="360" height="300" fill="#1b2236" opacity=".32" pointer-events="none"/>` + [[60, 250], [300, 240], [180, 200]].map(([x, y], i) => `<circle cx="${x}" cy="${y - 30}" r="60" fill="url(#glow)" pointer-events="none"/><g class="fire" style="animation-delay:${-i * .2}s" pointer-events="none"><rect x="${x - 2}" y="${y - 10}" width="4" height="10" fill="#f4efe6"/><path d="M${x},${y - 16} q-3,3 0,6 q3,-3 0,-6Z" fill="#ffb347"/></g>`).join('');
+  return '';
+}
+/* Déménagement : on garde la disposition du logement quitté dans la partie. */
+function snapshotLayout(home) {
+  const items = S.items.filter(i => i.home === home).map(i => ({ id: i.id, room: i.room, x: i.x, y: i.y, stored: !!i.stored }));
+  const rooms = {}; for (const k in S.decor.rooms) if (k.startsWith(home + ':')) rooms[k] = S.decor.rooms[k];
+  S.decor.layouts[home] = { at: S.day, stage: S.stage, items, rooms };
+}
+
 /* ===== pack.js ===== */
 /* =====================================================================
    PAQUET DE SOUVENIRS PRIVÉ — src/pack.js
@@ -3785,7 +4119,7 @@ function confetti() {
   for (let i = 0; i < 34; i++) { const e = document.createElement('span'); e.textContent = ['🎉', '✨', '❤', '🧦', '🎬', '🩺', '🐕'][i % 7]; e.style.cssText = `left:${Math.random() * 96}%;animation-delay:${Math.random() * .7}s;font-size:${16 + Math.random() * 16}px`; box.appendChild(e); }
   app.appendChild(box); setTimeout(() => box.remove(), 3200); sfx('fanfare');
 }
-function giveItem(id, owner) { if (!has(id)) S.items.push({ id, owner, day: S.day }); }
+function giveItem(id, owner) { if (!has(id)) S.items.push(ITEMS[id] && ITEMS[id].story ? { id, owner, day: S.day, stored: true } : { id, owner, day: S.day }); }
 let storageWarned = false;
 function commit(reason) {
   checkAch();
@@ -4053,7 +4387,7 @@ function switchChar(who) {
 async function buy(id) {
   if (UI.busy) return;
   const it = ITEMS[id], c = S.chars[S.active];
-  if (!it || has(id) || c.money < it.price) return;
+  if (!it || it.story || it.gift || has(id) || c.money < it.price) return;
   c.money -= it.price; const rec = { id, owner: S.active, day: S.day }; S.items.push(rec); sfx('coin');
   toast(`${it.name} : acheté !`);
   if (!S.firstItem) {
@@ -4074,7 +4408,7 @@ async function buy(id) {
         await say('leonore', '📱 voilà. bouge plus');
         love(1);
       }
-      await narr('Chaque objet acheté apparaît dans la pièce. Touche-le pour le déplacer. Touche le reste du décor : presque tout sert à quelque chose.');
+      await narr('Chaque objet acheté apparaît dans la pièce. Le bouton 🎨 Décorer permet de le déplacer, de le ranger ou de changer l’ambiance. Touche le reste du décor : presque tout sert à quelque chose.');
     }, 'firstBuy');
   } else { commit('buy:' + id); render(); }
 }
@@ -4110,7 +4444,8 @@ function deposit(n) {
 async function goal() {
   const g = GOALS[S.stage]; if (!g || S.pot < g.pot || S.love < g.love || UI.busy) return;
   const st = S.stage;
-  await run(async () => { await SC[g.scene](); S.seen[g.scene] = S.day; UI.tab = 'day'; UI.posX = null; S.trouvailles = []; spawnFinds(); const d = new Date(S.date); d.setFullYear(d.getFullYear() + [0, 2, 5][st]); S.date = d.getTime() + (st === 0 ? 90 * DAY_MS : 0); S.fete = null; }, 'move:' + g.scene);
+  (st === 0 ? ['coloc', 'ardennes'] : [homeId()]).forEach(snapshotLayout);
+  await run(async () => { await SC[g.scene](); S.flags.justMoved = S.stage; S.seen[g.scene] = S.day; UI.tab = 'day'; UI.posX = null; S.trouvailles = []; spawnFinds(); const d = new Date(S.date); d.setFullYear(d.getFullYear() + [0, 2, 5][st]); S.date = d.getTime() + (st === 0 ? 90 * DAY_MS : 0); S.fete = null; }, 'move:' + g.scene);
   confetti();
 }
 const PET_MULT = () => [1, 1, 3, 8][S.stage];
@@ -4160,33 +4495,24 @@ async function readMail() {
 }
 
 /* ---------- Décor : toucher, marcher, agir, déplacer les meubles ---------- */
-function placeItems(home) {
-  const H = ROOMS[home], out = H.rooms.map(() => []), used = H.rooms.map(() => ({ w: 0, f: 0, t: 0 }));
-  const list = S.items.filter(i => S.stage > 0 ? true : (home === 'coloc' ? i.owner === 'leonore' : home === 'ardennes' ? i.owner === 'leo' : false));
-  for (const rec of list) {
-    const it = ITEMS[rec.id]; if (!it) continue;
-    if (it.slot === 'g') { out[0].push({ id: rec.id, g: true }); continue; }
-    if (rec.home === home && rec.x != null && out[rec.room]) { out[rec.room].push({ id: rec.id, x: rec.x, y: rec.y }); continue; }
-    const order = H.rooms.map((_, i) => i); if (it.med && order.length > 1) order.reverse();
-    for (const ri of order) { const sl = H.rooms[ri].slots[it.slot] || []; if (used[ri][it.slot] < sl.length) { const [x, y] = sl[used[ri][it.slot]++]; out[ri].push({ id: rec.id, x, y }); break; } }
-  }
-  return out;
-}
 function plumbColor(who) { const c = S.chars[who], v = (c.energy + c.mood) / 2; return v >= 6 ? '#58d36b' : v >= 3.5 ? '#f2c744' : '#e5533f'; }
 function renderScene() {
   if (!S) return;
   const ov = UI.override, home = ov ? ov.home : homeId(), H = ROOMS[home];
-  let ri = ov ? ov.room : UI.room; if (ri >= H.rooms.length) ri = 0;
-  const room = H.rooms[ri], own = home === homeId();
+  let ri = ov ? ov.room : UI.room; if (ri >= H.rooms.length || (!ov && !roomAvail(H, ri))) ri = 0;
+  const room = H.rooms[ri], own = home === homeId(), dm = !ov && UI.decor;
+  ART.curKey = home + ':' + ri;
   let cast = ov && ov.cast;
   if (!cast) cast = home === 'coloc' ? (ri === 0 ? ['leonore', 'mathys'] : ['leonore']) : home === 'ardennes' ? ['leo'] : ['leonore', 'leo'];
   const vis = !ov && ri === 0 && S.visitor && S.visitor[S.active];
   if (vis && !cast.includes(vis)) cast = cast.concat([vis]);
   let svg = D.defs + room.draw();
-  const placed = ((S.stage === 0 || own) && !(ov && ov.title)) ? placeItems(home)[ri] : [];
-  placed.sort((a, b) => (a.y || 0) - (b.y || 0));
+  if (room.rugAt && roomSet('rug')) svg += `<g pointer-events="none">${D.rug(...room.rugAt)}</g>`;
+  const placed = ((S.stage === 0 || own) && !(ov && ov.title)) ? placeItems(home)[ri].slice() : [];
+  placed.sort((a, b) => (a.g ? -1 : 0) || (a.y || 0) - (b.y || 0));
   if (S.fete && own && !(ov && ov.title) && ri === 0 && FETE_ART[S.fete.id]) svg += `<g pointer-events="none">${FETE_ART[S.fete.id]()}</g>`;
-  for (const p of placed) svg += `<g data-hs="item_${p.id}" class="${UI.moving === p.id ? 'moving' : ''}">${p.g ? ITEM_ART[p.id]() : ITEM_ART[p.id](p.x, p.y)}</g>`;
+  for (const p of placed) svg += `<g data-hs="item_${p.id}" class="${dm && UI.decor.sel === p.id ? 'moving' : ''}" ${p.g ? 'data-g="1"' : `data-ix="${p.x}" data-iy="${p.y}"`}>${itemArt(p, placed)}</g>`;
+  if (dm) svg += `<g pointer-events="none">${decorOverlay(home, ri, placed)}</g>`;
   if (S.stage >= 1 && home === ['', 'appart', 'maison', 'manoir'][S.stage] && !(ov && ov.title)) {
     S.pets.forEach((p, i) => { svg += pet(p.kind, [44, 276][i], 298, 1.15); });
     S.kids.forEach((k, i) => { const x = [318, 84][i]; svg += k.st === 0 ? babyArt(x, 296) : person('kid' + (k.look % 2), x, 296, [0, .5, .58, .7, .84, .95][k.st], { headScale: [0, 1.5, 1.4, 1.25, 1.1, 1][k.st] }); });
@@ -4195,16 +4521,19 @@ function renderScene() {
   cast.forEach((id, i) => {
     const sp = spots[i % spots.length], me = !ov && id === S.active;
     const dx = me && UI.posX != null ? UI.posX - sp[0] : 0;
-    svg += `<g class="walker" data-w="${id}" data-x="${sp[0]}" style="transform:translate(${dx}px,0)">` + person(id, sp[0], sp[1], sp[2], id === 'mathys' && UI.mathysBow ? { bow: true, outfit: PEOPLE.mathys.fit } : null) +
+    svg += `<g class="walker" data-w="${id}" data-x="${sp[0]}" style="transform:translate(${dx}px,0)"${dm ? ' pointer-events="none" opacity=".55"' : ''}>` + person(id, sp[0], sp[1], sp[2], id === 'mathys' && UI.mathysBow ? { bow: true, outfit: PEOPLE.mathys.fit } : null) +
       (me ? `<path class="plumb" transform="translate(${sp[0]},${sp[1] - 141 * sp[2]})" d="M0,-7 l4.500,7 l-4.500,7 l-4.500,-7Z" fill="${plumbColor(id)}" stroke="#fff" stroke-width=".8"/>` : '') + `</g>`;
   });
-  if (!ov) (S.trouvailles || []).forEach((f, i) => { if (f.home === home && f.room === ri) svg += findArt(f, i); });
+  if (!ov && !dm) (S.trouvailles || []).forEach((f, i) => { if (f.home === home && f.room === ri) svg += findArt(f, i); });
+  svg += lightLayer();
   if (!ov && S.chars[S.active].moves <= 0 && ri === 0) svg += ({ ardennes: [[112, 236, 70], [278, 172, 80]], coloc: [[300, 108, 90], [110, 150, 60]], appart: [[112, 238, 70], [270, 172, 80]], maison: [[193, 165, 95], [300, 174, 70]], manoir: [[292, 165, 95], [170, 22, 80], [292, 74, 60]] }[home] || []).map(g => `<circle cx="${g[0]}" cy="${g[1]}" r="${g[2]}" fill="url(#glow)" pointer-events="none"/>`).join('');
   if (!ov) { const mv = S.chars[S.active].moves; svg += mv === 1 ? `<rect width="360" height="300" fill="#ff8a3d" opacity=".10" pointer-events="none"/>` : mv <= 0 ? `<rect width="360" height="300" fill="#10183a" opacity=".36" pointer-events="none"/>` : ''; }
   $('#scene').innerHTML = svg;
   $('#sceneTitle').textContent = ov && ov.title ? ov.title.replace(/^(INT|EXT)\. /, '') : `${H.name} · ${room.name}`;
   const tabs = $('#roomTabs');
-  tabs.innerHTML = (!ov && H.rooms.length > 1) ? H.rooms.map((r, i) => `<button class="${i === ri ? 'on' : ''}" data-room="${i}">${esc(r.name)}</button>`).join('') : '';
+  const av = H.rooms.map((r, i) => [r, i]).filter(([, i]) => roomAvail(H, i));
+  tabs.innerHTML = (!ov && av.length > 1) ? av.map(([r, i]) => `<button class="${i === ri ? 'on' : ''}" data-room="${i}">${esc(r.tab || r.name)}</button>`).join('') : '';
+  const db = $('#decoBtn'); if (db) db.hidden = !!ov || !!UI.decor || UI.busy;
 }
 function closeBubble() { const b = $('#bubble'); if (b) { b.className = ''; b.innerHTML = ''; } clearTimeout(bubble.t); }
 function bubble(text, actions) {
@@ -4225,6 +4554,12 @@ function walkTo(x) {
 function doObj(hs, a) {
   const who = S.active, key = `${who}:${hs}:${a.k}`;
   if (a.special === 'teckel') { S.flags.teckelAcc = ((S.flags.teckelAcc || 0) + 1) % TECKEL_ACC.length; commit('teckel'); renderScene(); return bubble(S.flags.teckelAcc ? `Le teckel porte maintenant ${TECKEL_ACC[S.flags.teckelAcc]}. Il ne proteste pas.` : 'Le teckel est de nouveau tout nu. Digne.'); }
+  if (a.special === 'memory') {
+    const all = S.memories.map(memOf).filter(m => m && !m.locked);
+    if (!all.length) return bubble('Rien à montrer encore. Ça viendra vite.');
+    const m = all[(S.counters.projo = (S.counters.projo || 0) + 1) % all.length]; needsFx(who, { m: 2 }); moodlet(who, '🎞️ Un souvenir'); commit('obj:' + hs); renderTop();
+    return bubble(`${m.icon} ${m.title}. ${m.text}`);
+  }
   if (a.special === 'hair') { const o = ['', 'pony', 'bun'], i = (Math.max(0, o.indexOf(S.flags.hairL || '')) + 1) % 3; S.flags.hairL = o[i]; commit('look'); render(); return bubble(['Cheveux détachés. Trois d’entre eux restent sur la brosse. Douze sur le sol.', 'Queue-de-cheval. Mode partiel.', 'Chignon. Mode garde.'][i]); }
   const again = S.used[key]; S.used[key] = 1;
   const t = typeof a.t === 'string' ? a.t : (a.t[who] || a.t.leonore);
@@ -4234,6 +4569,7 @@ function doObj(hs, a) {
 }
 function onSceneTap(e) {
   if (UI.busy) return;
+  if (UI.decor) return decorTap(e);
   const pt = svgPoint(e);
   if (UI.moving) {
     const rec = S.items.find(i => i.id === UI.moving), it = ITEMS[UI.moving]; UI.moving = null;
@@ -4253,8 +4589,14 @@ function onSceneTap(e) {
   }
   if (id.startsWith('item_')) {
     const iid = id.slice(5), it = ITEMS[iid];
-    const acts = it.slot === 'g' ? [] : [{ label: 'Déplacer', go: () => { UI.moving = iid; renderScene(); bubble(it.slot === 'w' ? 'Touche l’endroit du mur où l’accrocher.' : 'Touche l’endroit où le poser.'); } }];
-    return bubble(`${it.name}. ${it.desc || (iid === 'broderie' ? 'Quarante heures de point de croix. Onze piqûres.' : 'Trouvé au grenier. Il ronronne encore.')}`, acts);
+    const acts = [{ label: '🎨 Déplacer', go: () => openDecor(iid) }];
+    let extra = '';
+    if (iid === 'guirlande') { const on = S.decor.on.guirlande !== false; acts.unshift({ label: on ? 'L’éteindre' : 'L’allumer', go: () => { S.decor.on.guirlande = !on; sfx(on ? 'tap' : 'love'); commit('guirlande'); renderScene(); bubble(on ? 'Éteinte. Le salon redevient un salon.' : 'Allumée. Ça sent décembre, même en juillet.'); } }); }
+    if (iid === 'carafe') acts.unshift({ label: 'La redresser', go: () => { sfx('glouglou'); needsFx(S.active, { m: 1 }); moodlet(S.active, '🐟 Glouglou'); commit('carafe'); renderTop(); bubble(pick('glou', ['Glouglouglou. Le poisson a l’air content.', 'Glou… glou… glouglou. Impossible de ne pas sourire.', 'Elle fait glouglou. Encore. Tu la redresses une troisième fois, pour être sûre.'])); } });
+    if (iid === 'lunettes') acts.unshift({ label: 'Les poser pour la nuit', go: () => { needsFx(S.active, { e: 1 }); commit('lunettes'); bubble('Posées sur la table de nuit, branches pliées. Personne ne s’endormira avec, ce soir.'); } });
+    if (iid === 'bouleNeige') acts.unshift({ label: 'La secouer', go: () => { sfx('pop'); bubble('Il neige dans la boule. Beaucoup. Comme ce jour-là.'); } });
+    if (iid === 'etagere') { const sh = placeItems(homeId())[UI.room].find(q => q.id !== 'etagere' && ITEMS[q.id] && ITEMS[q.id].slot === 't' && Math.abs(q.x - (+el.dataset.ix + 12)) < 7 && Math.abs(q.y - (+el.dataset.iy + 6)) < 7); extra = sh ? ` Dessus : ${itemName(sh.id).toLowerCase()}.` : ' Il y a de la place pour exposer un souvenir : 🎨 Déplacer un petit objet dessus.'; }
+    return bubble(`${itemName(iid)}. ${itemDesc(iid) || (iid === 'broderie' ? 'Quarante heures de point de croix. Onze piqûres.' : 'Trouvé au grenier. Il ronronne encore.')}${extra}`, acts);
   }
   if (id.startsWith('pp_') && S.visitor && id.slice(3) === S.visitor[S.active]) {
     const v = id.slice(3), who = S.active, fi = FRIEND_TALKS[who].findIndex(t => t.p === v), pi = TALKS[who].findIndex(t => t.p === v);
@@ -4328,7 +4670,8 @@ function renderPanel() {
     if (nt) h += `<button class="act mail note" data-readnote="1"><span class="ic">💌</span><span class="tx"><b>${nt.auto ? 'La surprise du jour : un mot sur le frigo' : 'Un mot sur le frigo'}</b><i>De la part de ${nt.from === 'leo' ? nkO() : nkL()}. Un vrai.</i></span></button>`;
     const ft = feteToday();
     if (ft) h += `<button class="act fete" data-fete="1"><span class="ic">${ft.ic}</span><span class="tx"><b>${ft.name}</b><i>C’est aujourd’hui, ${dateLabel(S.date)}. Tout le monde vous attend. Ne prend pas de moment.</i></span></button>`;
-    if (!S.firstItem) h += `<div class="tip">Un premier achat t’attend dans la <b>Boutique</b>. Il apparaîtra dans la pièce.</div>`;
+    if (S.flags.justMoved != null) h += `<button class="act duo" data-decor="1"><span class="ic">📦</span><span class="tx"><b>Vos objets ont suivi</b><i>Ouvre 🎨 Décorer pour les réinstaller. L’ancien logement est gardé en mémoire.</i></span></button>`;
+    if (!S.firstItem) h += `<div class="tip">Un premier achat t’attend dans la <b>Boutique</b> (le kit du coin est gratuit). Il apparaîtra dans la pièce.</div>`;
     else if (a === 'leo' && S.seen.wish && !S.seen.surprise) h += `<div class="tip">Léonore t’a confié une envie, l’autre soir au téléphone. Tu peux lui <b>organiser une surprise</b>.</div>`;
     else if (GOALS[S.stage] && S.pot >= GOALS[S.stage].pot && S.love >= GOALS[S.stage].love) h += `<div class="tip">La cagnotte est prête : va dans <b>Projets</b> pour la prochaine étape.</div>`;
     h += `<h3>Tes moments du jour <span class="dots">${'●'.repeat(Math.max(0, c.moves))}${'○'.repeat(Math.max(0, 2 - c.moves))}</span></h3>`;
@@ -4337,10 +4680,12 @@ function renderPanel() {
     h += `<h3>À deux <span class="dots">un moment chacun</span></h3>` + ACTS.filter(A => A.who === 'both').map(A => actBtn(A)).join('');
     h += `<div class="row"><button class="ghost" data-who="${o}">↔ Passer à ${PEOPLE[o].name}</button><button class="primary" data-end="1">🌙 Finir la journée</button></div>`;
   }
+  if (UI.tab === 'decor' && UI.decor) h += decorPanel();
   if (UI.tab === 'shop') {
-    h += `<div class="hello"><h2>Boutique</h2><p>${PEOPLE[a].name} a ${eur(c.money)}. Tout est disponible tout de suite.</p></div>`;
-    const card = ([id, it]) => `<div class="item"><svg viewBox="${{ g: '-34 -78 68 84', w: '-28 -29 56 58', t: '-27 -31 54 36', f: '-34 -78 68 84' }[it.slot]}" class="thumb">${it.slot === 'g' ? `<g transform="translate(-34,-60) scale(.19)">${ITEM_ART[id]()}</g>` : ITEM_ART[id](0, 0)}</svg><div class="tx"><b>${it.name}</b><i>${it.desc || ''}</i></div><button data-buy="${id}" ${c.money < it.price ? 'disabled' : ''}>${eur(it.price)}</button></div>`;
-    const sh = shopToday(a);
+    h += `<div class="hello"><h2>Boutique</h2><p>${PEOPLE[a].name} a ${eur(c.money)}. Tout est disponible tout de suite.</p></div><button class="act duo" data-decor="1"><span class="ic">🎨</span><span class="tx"><b>Décorer ${S.stage === 0 ? (a === 'leonore' ? 'ta chambre et la coloc' : 'l’appart') : 'la maison'}</b><i>Placer, ranger, déplacer, changer les murs, le sol, la lumière</i></span></button>`;
+    const card = ([id, it]) => `<div class="item ${it.coin && has(id) ? 'own' : ''}"><svg viewBox="${{ g: '-34 -78 68 84', w: '-28 -29 56 58', t: '-27 -31 54 36', f: '-34 -78 68 84' }[it.slot]}" class="thumb">${it.slot === 'g' ? `<g transform="translate(-34,-60) scale(.19)">${ITEM_ART[id]()}</g>` : ITEM_ART[id](0, 0)}</svg><div class="tx"><b>${it.name}</b><i>${it.desc || ''}</i></div><button data-buy="${id}" ${c.money < it.price || has(id) ? 'disabled' : ''}>${has(id) ? 'À toi ✔' : it.price ? eur(it.price) : 'Gratuit'}</button></div>`;
+    const sh = shopToday(a), kit = Object.entries(ITEMS).filter(([, it]) => it.coin);
+    h += `<h3>${S.stage === 0 && a === 'leonore' ? 'Ton coin, pour commencer' : 'Le coin à soi'} <span class="dots">gratuit</span></h3>` + kit.map(card).join('');
     if (sh.fixed.length) h += `<h3>${a === 'leonore' ? 'Matériel médical et utile' : 'Pour le boulot et le film'}</h3>` + sh.fixed.map(card).join('');
     h += `<h3>Décoration</h3>` + (sh.deco.length ? sh.deco.map(card).join('') : `<p class="done">Tu as tout acheté. Il y en aura d’autres au prochain logement.</p>`);
     h += `<h3>Vêtements ${a === 'leonore' ? 'femme' : 'homme'}</h3>` + Object.entries(OUTFITS).filter(([, x]) => x.who === a && (x.stage || 0) <= S.stage).map(([id, x]) => {
@@ -4350,7 +4695,7 @@ function renderPanel() {
     h += `<h3>Coiffeur, opticien, miroir</h3>` + LOOKS[a].map(([lbl, k, opts]) => `<p class="lk">${lbl}</p><div class="chips">` + opts.map(([v, l, pr]) => { const owned = !pr || S.flags['own_' + k + '_' + v]; return `<button class="chip ${(S.flags[k] || '') === v ? 'on' : ''}" data-look="${k}:${v}" data-price="${pr}">${l}${owned ? '' : ` · ${eur(pr)}`}</button>`; }).join('') + `</div>`).join('');
     const hk = homeId(), wl = hk === 'manoir' ? WALLS_MANOIR : WALLS;
     h += `<h3>Couleur des murs ${hk === 'coloc' ? '(ta chambre)' : ''}</h3><div class="chips">` + wl.map(([l, col]) => `<button class="chip ${(S.flags['wall_' + hk] || '') === col ? 'on' : ''}" data-look="wall_${hk}:${col}"><i style="background:${col || (hk === 'manoir' ? '#34564d' : '#f4efe6')}"></i>${l}</button>`).join('') + `</div>`;
-    h += `<p class="done">${S.items.length} objet${S.items.length > 1 ? 's' : ''} chez ${S.stage === 0 ? 'vous deux' : 'vous'}. Touche un objet dans le décor pour le déplacer.</p>`;
+    h += `<p class="done">${S.items.length} objet${S.items.length > 1 ? 's' : ''} chez ${S.stage === 0 ? 'vous deux' : 'vous'}. Touche 🎨 Décorer pour tout placer, ranger ou déplacer.</p>`;
   }
   if (UI.tab === 'people') {
     const sub = { leo: 'Ton amoureux', leonore: 'Ton amoureuse', mathys: a === 'leonore' ? 'Ton meilleur ami. Ton coloc. Ton épreuve.' : 'Le meilleur ami de Léonore. Une source fiable.', anne: 'Ta mère. Tennis, équitation, pétitions.', stephane: 'Ton père. Ingénieur chez Nokia. Curieux de tout.', cyprien: 'Ton grand frère', muriel: 'Ta mère. Cuisine pour douze. Voit tout.', laurent: 'Ton père. Le foot, la brocante, les cadeaux.', lohan: 'Ton frère' };
@@ -4552,8 +4897,17 @@ document.addEventListener('click', e => {
   const d = t.dataset;
   if (t.disabled) return;
   if (d.who) return switchChar(d.who);
-  if (d.tab) { UI.tab = d.tab; sfx('tap'); renderTabs(); renderPanel(); return; }
-  if (d.room) { UI.room = +d.room; UI.posX = null; closeBubble(); sfx('tap'); renderScene(); return; }
+  if (d.tab) { if (UI.decor) { UI.decor.back = d.tab; return closeDecor(); } UI.tab = d.tab; sfx('tap'); renderTabs(); renderPanel(); return; }
+  if (d.room) { UI.room = +d.room; UI.posX = null; closeBubble(); sfx('tap'); if (UI.decor) { UI.decor.sel = null; UI.decor.msg = ''; return render(); } renderScene(); return; }
+  if (d.decor) return openDecor();
+  if (d.ddone) return closeDecor();
+  if (d.dundo) return decorUndo();
+  if (d.dsel !== undefined && UI.decor) { UI.decor.sel = d.dsel || null; UI.decor.msg = ''; return render(); }
+  if (d.dpick && UI.decor) { UI.decor.sel = d.dpick; decorMsg(`${itemName(d.dpick)} : touche l’endroit de « ${ROOMS[UI.decor.home].rooms[UI.room].name} » où le poser${placeItems(UI.decor.home).status[d.dpick].st === 'placed' ? ', ou glisse-le' : ''}.`); sfx('tap'); render(); return; }
+  if (d.dstore) return decorStore(d.dstore);
+  if (d.dout) return decorTakeOut(d.dout);
+  if (d.dset) { const i = d.dset.indexOf(':'); return decorSet(d.dset.slice(0, i), d.dset.slice(i + 1)); }
+  if (d.dvar) { const i = d.dvar.indexOf(':'); return decorVariant(d.dvar.slice(0, i), d.dvar.slice(i + 1)); }
   if (d.act) return doAct(d.act);
   if (d.talk) return doTalk(d.talk[0], +d.talk.slice(1));
   if (d.fete) return doFete();
@@ -4583,14 +4937,18 @@ document.addEventListener('click', e => {
   ART.flags = () => (S ? S.flags : {});
   ART.activeId = () => (S ? S.active : 'leonore');
   ART.looks = id => (!S ? {} : id === 'leonore' ? { hair: S.flags.hairL, hairColor: S.flags.hairColL, glasses: S.flags.glassL, cap: S.flags.capL } : id === 'leo' ? { beard: S.flags.beardLeo, hair: S.flags.hairLeo, cap: S.flags.capLeo, glasses: S.flags.glassLeo } : {});
-  ART.wall = (k, d) => (S && S.flags['wall_' + k]) || d;
+  ART.wall = (k, d) => roomSet('wall') || (S && S.flags['wall_' + k]) || d;
   ART.night = () => !!S && !UI.override && S.chars[S.active].moves <= 0;
   ART.season = () => { const m = new Date(S ? S.date : Date.now()).getMonth(); return m === 11 || m < 2 ? 'hiver' : m < 5 ? 'printemps' : m < 8 ? 'ete' : 'automne'; };
   $('#scene').addEventListener('click', onSceneTap);
+  $('#scene').addEventListener('pointerdown', decorPointerDown);
+  $('#scene').addEventListener('pointermove', decorPointerMove);
+  $('#scene').addEventListener('pointerup', decorPointerUp);
+  $('#scene').addEventListener('pointercancel', () => { decorDrag = null; if (UI.decor) render(); });
   const saved = await Save.load();
   showTitle(saved);
   setInterval(() => { if (S && !document.hidden && !document.querySelector('#overlay.title')) S.stats.ms = (S.stats.ms || 0) + 1000; }, 1000);
-  window.MiLife = { Save, get state() { return S; }, UI, Mini, render };
+  window.MiLife = { Save, Pack, get state() { return S; }, UI, Mini, render, placeItems, checkDaily, todayKey, openDecor };
 })();
 
 </script>
