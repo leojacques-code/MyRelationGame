@@ -491,9 +491,9 @@ const Save = (() => {
       notes: [],              // [{from, text, ts, day, read, auto?}] petits mots du frigo ; auto = post-it d'origine (MOTS_LEO)
       login: { day: '', streak: 0 },          // dernier jour réel de connexion, jours d'affilée
       ended: false,           // la grande soirée a eu lieu
-      /* v2 — surprises quotidiennes (jour réel, indépendant du calendrier du jeu) */
+      /* v2 — surprises quotidiennes */
       daily: {
-        lastDay: '',          // dernier jour réel (AAAA-MM-JJ, heure locale) où une surprise a été débloquée
+        lastGameDay: 0,       // dernier jour de jeu où une surprise a été débloquée
         unlocked: [],         // [{id, day, kind}] dans l'ordre de déblocage ; id = 'mot:<n>' ou 'ep:<id épisode>'
         ep: {},               // {idÉpisode: {opened, read, readDay, answers:{}, items:{}, plays}}
         anniv: {},            // {'<id>:<année>': jour réel} rappels d'anniversaire déjà montrés
@@ -543,7 +543,10 @@ const Save = (() => {
       }
       return dst;
     };
+    const previousDaily = s.daily;
+    const usedRealDays = previousDaily && previousDaily.lastDay && previousDaily.lastGameDay === undefined;
     const out = fill(s, b);
+    if (usedRealDays) out.daily.lastGameDay = out.day;
     const from = out.meta.version || 1;
     // « Gosio » → « Gosiot » (ancienne orthographe de notre enfant imaginaire)
     const fix = t => (typeof t === 'string' ? t.replace(/Gosio(?!t)/g, 'Gosiot').replace(/GOSIO(?!T)/g, 'GOSIOT') : t);
@@ -3757,7 +3760,7 @@ const CONTENU_INTEGRE = {
  "id": "petites-choses",
  "version": 2,
  "title": "Les petites choses",
- "note": "Contenu intégré au jeu. Une surprise par jour réel, dans l’ordre.",
+ "note": "Contenu intégré au jeu. Une surprise par journée de jeu, dans l’ordre.",
  "items": {
   "sousbock": {
    "name": "Sous-bock de la Contrescarpe",
@@ -5890,8 +5893,8 @@ function memOf(m) {
 /* ===== surprises.js ===== */
 /* =====================================================================
    SURPRISES DU JOUR — src/surprises.js
-   Au plus UNE nouvelle surprise par jour réel (date locale de l'appareil,
-   indépendante du calendrier du jeu). Ordre stable : les épisodes du paquet
+   Au plus UNE nouvelle surprise par jour de jeu. Les rappels d'anniversaire
+   suivent la date réelle. Ordre stable : les épisodes du paquet
    privé, puis les post-its d'origine (MOTS_LEO, compteur S.counters.mots).
    Sans paquet : les post-its d'origine. Une surprise non lue reste en attente
    et bloque la suivante : elle avance à son rythme. Zéro moment, zéro euro.
@@ -5918,7 +5921,7 @@ function seriesNext() {
   if (n < MOTS_LEO.length) return { kind: 'mot', n };
   return null;
 }
-/** Débloque la surprise du jour si c'est un nouveau jour réel. Renvoie vrai si quelque chose de nouveau est arrivé. */
+/** Débloque la prochaine surprise du jour de jeu et vérifie les anniversaires réels. */
 function checkDaily() {
   if (!S || !S.seen.intro || !S.daily) return false;
   const d = S.daily, today = todayKey(); let news = false;
@@ -5928,10 +5931,14 @@ function checkDaily() {
     const k = `${a.id}:${now.getFullYear()}`;
     if (a.m === now.getMonth() + 1 && a.d === now.getDate() && !d.anniv[k]) { d.anniv[k] = { day: today, read: false }; news = true; }
   }
-  if (d.lastDay !== today && !pendingSurprise()) {
+  if (S.day > d.lastGameDay && !pendingSurprise()) {
     const nx = seriesNext();
-    if (nx && nx.kind === 'ep') { d.unlocked.push({ id: 'ep:' + nx.id, day: today, kind: 'ep' }); d.lastDay = today; news = true; }
-    else if (nx && nx.kind === 'mot') { if (leoNote()) { d.unlocked.push({ id: 'mot:' + nx.n, day: today, kind: 'mot' }); d.lastDay = today; news = true; } }
+    if (nx && (nx.kind === 'ep' || leoNote())) {
+      const id = nx.kind === 'ep' ? nx.id : nx.n;
+      d.unlocked.push({ id: nx.kind + ':' + id, day: today, kind: nx.kind });
+      d.lastGameDay = S.day;
+      news = true;
+    }
   }
   if (news) commit('daily');
   return news;
@@ -6059,6 +6066,7 @@ async function playEpisode(id, replay) {
     st.plays = (st.plays || 0) + 1;
     UI.surprise = false;
   }, 'ep:' + id);
+  surpriseTick();
 }
 
 /* Petite interaction au toucher (ex. : une boule de neige) — facultative, on peut passer. */
@@ -6119,7 +6127,7 @@ function showPack(back) {
   };
 }
 
-/** Vérifie la date réelle (reprise, retour sur l'onglet, minuit passé l'onglet ouvert). */
+/** Actualise les surprises au passage d'une journée ou à la reprise du jeu. */
 function surpriseTick() {
   if (!S || UI.busy || document.querySelector('#overlay.show')) return;
   if (checkDaily()) { if (UI.tab === 'day' || UI.tab === 'album') renderPanel(); renderTabs(); toast(pendingSurprise() || pendingAnniv() ? '🎁 Une surprise t’attend dans Journée' : '📅 Nouveau jour'); }
@@ -6412,6 +6420,7 @@ async function readNote(kind) {
     await say(n.from, n.text, 'smile');
     if (!S.used['note:' + a]) { S.used['note:' + a] = 1; love(1); needsFx(a, { m: 2 }); moodlet(a, '💌 A reçu un petit mot'); }
   }, 'note:read');
+  surpriseTick();
 }
 async function doFete() { if (UI.busy || !feteToday()) return; await run(playFete, 'fete:' + S.fete.id); }
 const clock = ms => { const t = Math.floor((ms || 0) / 1000); return `${Math.floor(t / 60)} min ${String(t % 60).padStart(2, '0')}`; };
@@ -6443,6 +6452,7 @@ async function endDay() {
     await say(other(a), `📱 ${list[(S.day + (a === 'leo' ? 4 : 0)) % list.length]}`);
     const ft = feteToday(); if (ft) await narr(`${ft.ic} Aujourd’hui : ${ft.name}. C’est dans l’onglet Journée, et ça ne prend pas de moment.`);
   }, 'endDay');
+  surpriseTick();
 }
 function switchChar(who) {
   if (UI.busy || S.active === who) return;

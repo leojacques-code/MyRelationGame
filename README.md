@@ -52,9 +52,9 @@ node tools/paquet-ajouter-media.js /chemin/prive/paquet.json vocal-tempete /chem
 
 ## Surprises du jour
 
-Au plus une nouvelle surprise par jour réel (date locale de l’appareil, indépendante du calendrier du
-jeu) : les épisodes du paquet dans l’ordre, puis les post-its d’origine (`MOTS_LEO`, compteur
-`counters.mots`). Une surprise non lue attend son tour : rien ne s’empile.
+Les épisodes se débloquent dans l’ordre, au plus un par journée de jeu. Pour avancer,
+choisis **Finir la journée**. Une surprise en attente reste disponible, puis les post-its
+d’origine reprennent après les épisodes. Les rappels d’anniversaire suivent la date réelle.
 
 ## Tests
 
