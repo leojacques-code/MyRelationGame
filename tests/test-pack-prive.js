@@ -58,7 +58,7 @@ async function playAll(page, label, pickFn) {
     check(pack.episodes.every(e => (s.daily.ep[e.id] || {}).read), 'tous marqués lus');
     const storyItems = [...new Set(JSON.stringify(pack.episodes).match(/"t": ?"item", ?"id": ?"(\w+)"/g).map(x => x.match(/"id": ?"(\w+)"/)[1]))];
     check(storyItems.every(id => s.items.filter(i => i.id === id).length === 1), `objets d’histoire obtenus une seule fois (${storyItems.length})`);
-    check(s.memories.filter(m => m.ref).length === pack.episodes.length + 1, 'un souvenir par épisode (deux pour Rosie Lou)');
+    check(s.memories.filter(m => m.ref).length === pack.episodes.length + 1, 'un souvenir par épisode (un épisode en a deux)');
     check(!r.bad.length, 'aucun texte avec gabarit non résolu ' + r.bad.join(' | '));
     check(s.counters.mots === Math.min(9, mots0 + 1) && s.daily.unlocked[s.daily.unlocked.length - 1].kind === 'mot', `après le dernier épisode, les post-its d’origine reprennent (compteur ${mots0} → ${s.counters.mots})`);
     await tab(page, 'album'); const alb = await page.textContent('#panel');
