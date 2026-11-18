@@ -78,6 +78,31 @@ async function parcours(page, label) {
     check(/Une pinte à 15/.test(await page.textContent('#panel')), 'souvenir relisible dans Souvenirs');
     check(!errors.length, 'aucune erreur JS ' + errors.join(' | ')); await ctx.close();
   }
+  {
+    const ctx = await browser.newContext({ ...devices['iPhone 13'] });
+    await ctx.addInitScript(() => { Object.defineProperty(navigator, 'standalone', { value: true }); });
+    const url = 'http://127.0.0.1:8841/';
+    let page = await ctx.newPage();
+    await page.goto(url);
+    await page.waitForSelector('#tNew');
+    check(!(await page.isVisible('#updateOk')), 'iPhone installé sans partie : l’écran de démarrage s’ouvre directement');
+    const code = fs.readFileSync(path.join(__dirname, 'fixtures', 'save-v1-avancee-fictive.txt'), 'utf8').trim();
+    const oldSave = Buffer.from(code.slice('MILIFE1.'.length), 'base64').toString('utf8');
+    await page.evaluate(raw => localStorage.setItem('milife.save.v1', raw), oldSave);
+    await page.reload();
+    await page.waitForSelector('#updateOk');
+    check(/Continuer/.test(await page.textContent('#overlay')), 'iPhone installé avec une partie : le mot invite à continuer');
+    await page.tap('#updateOk');
+    await page.waitForSelector('#tCont');
+    check(/jour 23/.test(await page.textContent('#tCont')), 'Compris ramène à la partie existante');
+    check(await page.evaluate(raw => localStorage.getItem('milife.save.v1') === raw, oldSave), 'le mot ne modifie pas la sauvegarde');
+    await page.close();
+    page = await ctx.newPage();
+    await page.goto(url);
+    await page.waitForSelector('#tCont');
+    check(!(await page.isVisible('#updateOk')), 'le mot reste masqué à la prochaine ouverture');
+    await ctx.close();
+  }
   await browser.close(); srv.close();
   process.exit(summary() ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

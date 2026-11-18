@@ -6873,6 +6873,26 @@ function startGame(st) {
   if (!S.visitor || (!S.visitor.leo && S.day > 1)) newVisitors();
   render(); story().then(dailyBonus).then(surpriseTick);
 }
+function showUpdateNotice(saved) {
+  if (!saved || !(navigator.standalone || window.matchMedia('(display-mode: standalone)').matches)) return false;
+  const key = 'milife.notice.nouveautes-v2';
+  try { if (localStorage.getItem(key)) return false; } catch (e) { return false; }
+  const ov = $('#overlay');
+  ov.className = 'show title';
+  ov.innerHTML = `<section class="titleBox" aria-labelledby="updateTitle">
+    <h2 id="updateTitle" tabindex="-1">Un petit mot pour toi 💌</h2>
+    <p>Matecito, j’ai mis Mi Life à jour pour toi. Appuie sur « Continuer » pour reprendre notre partie là où tu t’étais arrêtée.</p>
+    <p>J’ai glissé des surprises dans nos journées et de nouvelles façons de mettre l’appart à ton goût. Je te laisse découvrir le reste.</p>
+    <p class="ded">Beaugossito</p>
+    <button id="updateOk" class="primary">Compris</button>
+  </section>`;
+  $('#updateTitle').focus();
+  $('#updateOk').onclick = () => {
+    try { localStorage.setItem(key, '1'); } catch (e) {}
+    showTitle(saved);
+  };
+  return true;
+}
 function showTitle(saved) {
   const ov = $('#overlay'); ov.className = 'show title';
   const bk = Save.readBackup();
@@ -7027,7 +7047,7 @@ document.addEventListener('click', e => {
   $('#scene').addEventListener('pointerup', decorPointerUp);
   $('#scene').addEventListener('pointercancel', () => { decorDrag = null; if (UI.decor) render(); });
   const saved = await Save.load();
-  showTitle(saved);
+  if (!showUpdateNotice(saved)) showTitle(saved);
   setInterval(() => { if (S && !document.hidden && !document.querySelector('#overlay.title')) S.stats.ms = (S.stats.ms || 0) + 1000; }, 1000);
   window.MiLife = { Save, Pack, get state() { return S; }, UI, Mini, render, placeItems, checkDaily, todayKey, openDecor };
 })();
