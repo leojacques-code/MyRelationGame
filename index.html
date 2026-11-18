@@ -3745,15 +3745,2047 @@ function snapshotLayout(home) {
   S.decor.layouts[home] = { at: S.day, stage: S.stage, items, rooms };
 }
 
+/* ===== contenu.js ===== */
+/* =====================================================================
+   LES PETITES CHOSES — 14 épisodes intégrés par défaut (aussi hors ligne).
+   Source : tools/generer-contenu.py (ne pas éditer ce bloc à la main).
+   ===================================================================== */
+/* <contenu> */
+const CONTENU_INTEGRE = {
+ "format": "milife.pack",
+ "schema": 1,
+ "id": "petites-choses",
+ "version": 2,
+ "title": "Les petites choses",
+ "note": "Contenu intégré au jeu. Une surprise par jour réel, dans l’ordre.",
+ "items": {
+  "sousbock": {
+   "name": "Sous-bock de la Contrescarpe",
+   "desc": "Une pinte à 15 h, pour rigoler. Puis la neige."
+  },
+  "bouleNeige": {
+   "name": "Boule à neige",
+   "desc": "Secoue-la : il neige, comme sur la route du retour."
+  },
+  "ticket": {
+   "name": "Le ticket du mauvais arrêt",
+   "desc": "Montmartre, puis la rue de Lappe. Mauvais arrêt, bon baiser."
+  },
+  "calendrier": {
+   "name": "Calendrier 2026",
+   "desc": "Le 2 février, entouré deux fois. Le 14, barré : elle avait deux semaines d’avance."
+  },
+  "tasse": {
+   "name": "Le mug du café (et de l’Ice Tea)",
+   "desc": "Commandé sans regarder la carte."
+  },
+  "marquepage": {
+   "name": "Deux marque-pages Rosie Lou",
+   "desc": "Son anniversaire, puis le sien. Même adresse."
+  },
+  "lunettes": {
+   "name": "Ses lunettes",
+   "desc": "Leur place, le soir : la table de nuit. Pas sur le nez à minuit."
+  },
+  "bottines": {
+   "name": "Ses bottines marron",
+   "desc": "Celles qu’elle porte souvent."
+  },
+  "briques": {
+   "name": "Le Pikachu en briques",
+   "desc": "Construit ensemble, au début. Une oreille un peu de travers."
+  },
+  "carafe": {
+   "name": "La carafe poisson",
+   "desc": "Redresse-la : glouglou."
+  },
+  "carte": {
+   "name": "Le mot gardé",
+   "desc": "Merci d’avoir été là."
+  },
+  "carnet": {
+   "name": "Carnet du SMUR de Longjumeau",
+   "desc": "Six semaines, des pages cornées."
+  },
+  "cle": {
+   "name": "La clé",
+   "desc": "Elle n’ouvre encore rien. Pas encore."
+  },
+  "plan": {
+   "name": "Le plan à deux",
+   "desc": "Pas à l’échelle. « Ici, on se retrouve. »"
+  }
+ },
+ "anniversaries": [
+  {
+   "id": "premier-rdv",
+   "m": 1,
+   "d": 5,
+   "label": "5 janvier : le premier rendez-vous",
+   "steps": [
+    {
+     "t": "sms",
+     "who": "leo",
+     "text": "5 janvier. je dis ça comme ça. ta voisine va bien ?"
+    },
+    {
+     "t": "narr",
+     "text": "Le souvenir de la « voisine » est dans Souvenirs, si tu veux le relire."
+    }
+   ]
+  },
+  {
+   "id": "ensemble",
+   "m": 2,
+   "d": 2,
+   "label": "2 février : elle avait deux semaines d’avance",
+   "steps": [
+    {
+     "t": "sms",
+     "who": "leo",
+     "text": "2 février. merci d’avoir été plus rapide que mon plan"
+    },
+    {
+     "t": "narr",
+     "text": "« Elle avait deux semaines d’avance » est dans Souvenirs."
+    }
+   ]
+  }
+ ],
+ "media": {},
+ "episodes": [
+  {
+   "id": "voisine",
+   "title": "La « voisine »",
+   "icon": "🚪",
+   "teaser": "1 à 2 minutes",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "constance",
+       "text": "dis. tu te souviens de la fois où j’ai été ta voisine ?"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "En rangeant {home}, une vieille photo de la coloc glisse d’un carton. La porte du Kremlin-Bicêtre, un soir de janvier."
+      },
+      {
+       "t": "sms",
+       "who": "constance",
+       "text": "je viens de tomber sur la même. tu te souviens de la fois où j’ai été ta voisine ?"
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "narr",
+     "text": "Tout ce qui suit est vraiment arrivé. Les répliques, Léo les a réécrites de mémoire : il n’avait pas de micro."
+    },
+    {
+     "t": "scene",
+     "home": "coloc",
+     "cast": [
+      "leonore",
+      "constance"
+     ],
+     "room": 0,
+     "title": "INT. LE KREMLIN-BICÊTRE — 5 JANVIER 2026"
+    },
+    {
+     "t": "narr",
+     "text": "5 janvier 2026. Premier rendez-vous. Léonore attend chez elle. Constance est là, une de ses meilleures potes de la fac. Le plan, c’est qu’elle soit partie avant qu’il arrive."
+    },
+    {
+     "t": "narr",
+     "text": "Il arrive en avance."
+    },
+    {
+     "t": "scene",
+     "home": "coloc",
+     "cast": [
+      "leonore",
+      "constance",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. LE KREMLIN-BICÊTRE — LA PORTE"
+    },
+    {
+     "t": "narr",
+     "text": "La porte s’ouvre sur trois personnes qui n’avaient pas prévu d’être trois. Léonore, prise de court, présente Constance."
+    },
+    {
+     "t": "choice",
+     "prompt": "Tu la présentes comment ?",
+     "options": [
+      {
+       "label": "« C’est… ma voisine. »",
+       "value": "voisine",
+       "then": [
+        {
+         "t": "narr",
+         "text": "« Ma voisine. » Constance hoche la tête avec le sérieux d’une voisine. Elle a ses chaussons. Elle a son sac de cours. Elle a une carte d’étudiante de la même fac, qui dépasse de sa poche."
+        }
+       ]
+      },
+      {
+       "label": "Ma voisine, avec beaucoup d’aplomb",
+       "value": "aplomb",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle le dit avec un aplomb parfait. « Ma voisine. » Constance enchaîne sur le temps qu’il fait dans l’immeuble. L’immeuble n’a pas de temps particulier."
+        }
+       ]
+      },
+      {
+       "label": "Ma voisine… et regarder ailleurs",
+       "value": "ailleurs",
+       "then": [
+        {
+         "t": "narr",
+         "text": "« Ma voisine. » Elle regarde le plafond en le disant. Le plafond n’y est pour rien. Constance, elle, regarde Léo, très fort."
+        }
+       ]
+      }
+     ],
+     "key": "presentation"
+    },
+    {
+     "t": "say",
+     "who": "constance",
+     "text": "Bon. Je vais… retourner chez moi. À côté. Juste à côté."
+    },
+    {
+     "t": "narr",
+     "text": "Elle s’en va. Pas à côté. Le stress redescend d’un coup, comme une casserole qu’on retire du feu."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Ta voisine a l’air très sympa."
+    },
+    {
+     "t": "narr",
+     "text": "Elle rit. Il rit. Au bout de dix minutes, ils se parlent comme s’ils se connaissaient depuis toujours. Ça ne s’arrêtera plus vraiment."
+    },
+    {
+     "t": "sms",
+     "who": "constance",
+     "text": "« voisine ». je l’encadre. je te l’offre au mariage"
+    },
+    {
+     "t": "memory",
+     "icon": "🚪"
+    }
+   ],
+   "memory": {
+    "icon": "🚪",
+    "title": "La « voisine »",
+    "text": "5 janvier 2026, Le Kremlin-Bicêtre. Il arrive en avance, Constance est encore là, et Léonore la présente comme sa voisine. Une meilleure pote de la fac, en chaussons, dans le rôle de la voisine. Dix minutes plus tard, ils se parlaient comme s’ils se connaissaient depuis toujours."
+   },
+   "ask": "Tu ouvres la porte ?"
+  },
+  {
+   "id": "pinte",
+   "title": "Une pinte à 15 h",
+   "icon": "🍺",
+   "teaser": "1 à 2 minutes",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "question sérieuse. il est quelle heure là ? … ok. c’est l’heure parfaite pour une bière. je dis ça, je dis rien"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "Sur une étagère de {home}, un sous-bock un peu gondolé. Personne n’a jamais osé le jeter."
+      },
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "tu sais pourquoi on l’a gardé, ce sous-bock ?"
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "EXT. PLACE DE LA CONTRESCARPE — 15 H"
+    },
+    {
+     "t": "narr",
+     "text": "Toujours ce premier rendez-vous. Ils vont place de la Contrescarpe boire une pinte. À 15 h. Pour rigoler, parce que c’est une heure ridicule pour une pinte."
+    },
+    {
+     "t": "choice",
+     "prompt": "Tu prends quoi ?",
+     "options": [
+      {
+       "label": "La même que lui, pour voir",
+       "value": "meme",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Deux pintes identiques. Il fait semblant de s’y connaître. Elle fait semblant de le croire."
+        }
+       ]
+      },
+      {
+       "label": "La plus improbable de la carte",
+       "value": "improbable",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle choisit la plus improbable de la carte. Il regarde son verre, puis le sien, et regrette immédiatement d’avoir été raisonnable."
+        }
+       ]
+      },
+      {
+       "label": "Une demi, finalement",
+       "value": "demi",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle commande une demi. Il a déjà dit « pinte ». Il assume. Il assume mal."
+        }
+       ]
+      }
+     ],
+     "key": "pinte"
+    },
+    {
+     "t": "narr",
+     "text": "Ils parlent de tout. Elle rit d’un truc qu’il a dit, il ne sait même plus lequel."
+    },
+    {
+     "t": "narr",
+     "text": "C’est là, sur une terrasse à 15 h, une pinte trop grande dans la main, qu’il se dit pour la première fois : elle me plaît vraiment."
+    },
+    {
+     "t": "narr",
+     "text": "Il ne le dit pas, évidemment. Il dit un truc sur le temps."
+    },
+    {
+     "t": "narr",
+     "text": "Et le temps, justement, change d’avis. La neige commence à tomber. Puis très fort. La place devient blanche en dix minutes."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "C’est moi qui ai commandé la neige. Pour l’ambiance."
+    },
+    {
+     "t": "item",
+     "id": "sousbock",
+     "text": "Elle glisse le sous-bock dans sa poche. Il rejoint ton inventaire : à poser où tu veux, avec 🎨 Décorer."
+    },
+    {
+     "t": "memory",
+     "icon": "🍺"
+    }
+   ],
+   "memory": {
+    "icon": "🍺",
+    "title": "Une pinte à 15 h",
+    "text": "Place de la Contrescarpe, une pinte à 15 h pour rigoler. C’est là qu’il s’est dit pour la première fois qu’elle lui plaisait vraiment. Puis la neige est tombée, très fort."
+   }
+  },
+  {
+   "id": "cuvette",
+   "title": "La cuvette",
+   "icon": "❄️",
+   "teaser": "2 minutes",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "il neige un peu ce matin. j’ai mis mes chaussures qui accrochent. je dis ça pour qu’on soit tous rassurés"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "Une boule à neige sur l’étagère de {home}. Quelqu’un l’a secouée. Il neige dedans, beaucoup."
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "EXT. PARIS SOUS LA NEIGE — LE MÊME SOIR"
+    },
+    {
+     "t": "narr",
+     "text": "Léonore le regarde marcher sur la neige. Il marche comme quelqu’un qui découvre qu’il a des pieds."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Je gère. Je gère totalement."
+    },
+    {
+     "t": "narr",
+     "text": "Il ne gère pas. Il tient debout par principe."
+    },
+    {
+     "t": "tap",
+     "prompt": "Touche pour lui lancer une boule de neige (ou passe)",
+     "count": 4,
+     "emoji": "❄️",
+     "done": "Trois boules sur quatre dans le manteau. La quatrième, il l’a prise en pleine figure. Il dit qu’il l’a laissée passer."
+    },
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "EXT. LA ROUTE DU RETOUR — EN VOITURE"
+    },
+    {
+     "t": "narr",
+     "text": "Sur le retour, en voiture, la route est blanche. La voiture dérape. Ils frôlent les barrières. Personne ne parle. Puis la voiture s’arrête toute seule, coincée dans un creux de la route. Une cuvette."
+    },
+    {
+     "t": "narr",
+     "text": "Ils sont sains et saufs. D’autres voitures sont coincées aussi."
+    },
+    {
+     "t": "choice",
+     "prompt": "Qu’est-ce qui te revient en premier ?",
+     "options": [
+      {
+       "label": "Le silence juste après",
+       "value": "silence",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Le silence juste après. Deux secondes où personne ne respire. Puis ils se regardent, et ils comprennent que tout va bien."
+        }
+       ]
+      },
+      {
+       "label": "Sortir aider les autres",
+       "value": "aider",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Ils sortent aider les gens. Pousser, guider, rassurer. Léo glisse deux fois. Il aide quand même."
+        }
+       ]
+      },
+      {
+       "label": "La bataille de boules de neige",
+       "value": "bataille",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Ils sortent aider les gens, et ça finit en bataille de boules de neige, au milieu de la route, avec des inconnus. Personne n’a gagné. Tout le monde a gagné."
+        }
+       ]
+      }
+     ],
+     "key": "cuvette"
+    },
+    {
+     "t": "narr",
+     "text": "Ils aident les gens. Ils font une bataille de boules de neige. Il fait nuit, il fait froid, et c’est un des meilleurs moments de la journée."
+    },
+    {
+     "t": "item",
+     "id": "bouleNeige",
+     "text": "Une boule à neige rejoint ton inventaire. Secoue-la quand tu veux."
+    },
+    {
+     "t": "memory",
+     "icon": "❄️"
+    }
+   ],
+   "memory": {
+    "icon": "❄️",
+    "title": "La cuvette",
+    "text": "Lui qui tient à peine debout sur la neige. La voiture qui dérape, les barrières frôlées, et le creux de la route où ils finissent coincés. Puis ils sortent aider les gens, et ça finit en bataille de boules de neige."
+   }
+  },
+  {
+   "id": "canape",
+   "title": "Le canapé a servi d’alibi",
+   "icon": "🛋️",
+   "teaser": "1 minute",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "petite question technique. ton canapé, il est confortable ? c’est pour une étude"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "Le canapé de {home}. Un plaid dessus. Il a l’air innocent. Il ne l’est pas."
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "coloc",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. LE KREMLIN-BICÊTRE — PLUS TARD, CE SOIR-LÀ"
+    },
+    {
+     "t": "narr",
+     "text": "Ils rentrent sains et saufs. Dehors, il neige encore."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Avec la neige… je peux dormir sur ton canapé ? Le canapé, hein. Très bien, le canapé."
+    },
+    {
+     "t": "choice",
+     "prompt": "Tu réponds :",
+     "options": [
+      {
+       "label": "« Le canapé. Bien sûr. »",
+       "value": "canape",
+       "then": [
+        {
+         "t": "narr",
+         "text": "« Le canapé. Bien sûr. » Elle sort un plaid. Ils le regardent tous les deux, ce plaid, comme on regarde un alibi."
+        }
+       ]
+      },
+      {
+       "label": "Hausser un sourcil",
+       "value": "sourcil",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle hausse un sourcil. Il répète « le canapé » avec beaucoup de conviction. La conviction ne tient pas jusqu’à minuit."
+        }
+       ]
+      },
+      {
+       "label": "« Il est très inconfortable, ce canapé. »",
+       "value": "inconfortable",
+       "then": [
+        {
+         "t": "narr",
+         "text": "« Il est très inconfortable, ce canapé. » Il ne vérifie même pas."
+        }
+       ]
+      }
+     ],
+     "key": "canape"
+    },
+    {
+     "t": "narr",
+     "text": "Le canapé a servi d’alibi. Ils finissent par dormir dans le même lit. La suite ne regarde qu’eux."
+    },
+    {
+     "t": "scene",
+     "home": "ardennes",
+     "cast": [
+      "leo",
+      "vincent"
+     ],
+     "room": 0,
+     "title": "INT. RUE DES ARDENNES — LE LENDEMAIN"
+    },
+    {
+     "t": "narr",
+     "text": "Ce que Léonore n’a su qu’après : le lendemain, une fois rentré, Léo appelle Vincent."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Vincent. Le rendez-vous était magique. Je crois que c’est le début de quelque chose."
+    },
+    {
+     "t": "say",
+     "who": "vincent",
+     "text": "Tu me dis ça d’un film, d’habitude."
+    },
+    {
+     "t": "memory",
+     "icon": "🛋️"
+    }
+   ],
+   "memory": {
+    "icon": "🛋️",
+    "title": "Le canapé a servi d’alibi",
+    "text": "« Je peux dormir sur ton canapé, à cause de la neige ? » Le canapé n’a pas servi. Le lendemain, Léo a appelé Vincent pour lui dire que c’était magique, et que c’était le début de quelque chose."
+   }
+  },
+  {
+   "id": "lappe",
+   "title": "Mauvais arrêt, bon baiser",
+   "icon": "🎶",
+   "teaser": "2 minutes",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "jeu. tu te souviens de quel arrêt de métro il fallait descendre, la deuxième fois ? moi non plus. c’était tout le problème"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "Un ticket de métro tombe d’une vieille veste, dans {home}. Il a une histoire. Plusieurs arrêts, même."
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. UN BAR DE MONTMARTRE — DEUXIÈME RENDEZ-VOUS"
+    },
+    {
+     "t": "narr",
+     "text": "Deuxième rendez-vous. Un bar de Montmartre, des musiciens qui jouent, deux petits cocktails."
+    },
+    {
+     "t": "narr",
+     "text": "Le plan, ensuite : rue de Lappe, pour danser et profiter des offres."
+    },
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. LE MÉTRO"
+    },
+    {
+     "t": "narr",
+     "text": "Ils se trompent d’arrêt."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "C’était fait exprès. Pour la balade."
+    },
+    {
+     "t": "narr",
+     "text": "Ce n’était pas fait exprès."
+    },
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "EXT. QUELQUE PART VERS LA RUE DE LAPPE"
+    },
+    {
+     "t": "narr",
+     "text": "Ils finissent par trouver. Ils essaient plusieurs bars. Ils dansent ensemble."
+    },
+    {
+     "t": "narr",
+     "text": "Léo est très timide. Ça se voit. Il danse comme quelqu’un qui réfléchit à danser. Il réfléchit à autre chose, en fait. Longtemps."
+    },
+    {
+     "t": "narr",
+     "text": "Et puis il se lance. Premier baiser, au milieu du bar dansant."
+    },
+    {
+     "t": "choice",
+     "prompt": "De cette soirée, tu retiens quoi ?",
+     "options": [
+      {
+       "label": "Les musiciens de Montmartre",
+       "value": "musique",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Les musiciens. La première chanson, celle qui jouait quand ils se sont assis. Elle ne sait plus le titre. Elle sait l’air."
+        }
+       ]
+      },
+      {
+       "label": "Le mauvais arrêt",
+       "value": "arret",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Le mauvais arrêt. Marcher à côté de lui sans savoir où on va, et trouver que c’est très bien comme ça."
+        }
+       ]
+      },
+      {
+       "label": "Le moment où il s’est lancé",
+       "value": "lance",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Le moment où il s’est lancé. Elle l’a vu hésiter longtemps. Elle a attendu. Elle avait raison d’attendre."
+        }
+       ]
+      },
+      {
+       "label": "Tout. Dans le désordre.",
+       "value": "tout",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Tout. Les cocktails, le métro, les bars, la danse. Dans le désordre, comme la soirée."
+        }
+       ]
+      }
+     ],
+     "key": "soiree"
+    },
+    {
+     "t": "item",
+     "id": "ticket",
+     "text": "Le ticket du mauvais arrêt, encadré. Il rejoint ton inventaire."
+    },
+    {
+     "t": "memory",
+     "icon": "🎶"
+    }
+   ],
+   "memory": {
+    "icon": "🎶",
+    "title": "Mauvais arrêt, bon baiser",
+    "text": "Des musiciens dans un bar de Montmartre, deux petits cocktails, puis la rue de Lappe pour danser. Un mauvais arrêt de métro, plusieurs bars, et lui, très timide, qui finit par se lancer : premier baiser, dans le bar dansant."
+   }
+  },
+  {
+   "id": "avance",
+   "title": "Elle avait deux semaines d’avance",
+   "icon": "📅",
+   "teaser": "1 minute",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "j’ai retrouvé un vieux plan dans mes notes. il était bien, mon plan. il était juste un peu lent"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "Un calendrier de 2026, dans un carton de {home}. Deux dates entourées. Une barrée."
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. 2 FÉVRIER 2026"
+    },
+    {
+     "t": "narr",
+     "text": "Léo avait un plan. Un vrai, avec une date : la Saint-Valentin. Il comptait lui proposer qu’ils se mettent ensemble le 14 février."
+    },
+    {
+     "t": "narr",
+     "text": "Le 2 février 2026, c’est elle qui le lui propose."
+    },
+    {
+     "t": "narr",
+     "text": "Ce n’est pas rien, pour elle. Ce genre de phrase, on la tourne longtemps avant de la dire. Elle la dit quand même."
+    },
+    {
+     "t": "choice",
+     "prompt": "Comment tu le lui dis ?",
+     "options": [
+      {
+       "label": "Directement, en le regardant",
+       "value": "direct",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle le regarde et elle le dit, simplement. Il met deux secondes de trop à répondre. Ce sont deux secondes de bonheur, pas d’hésitation."
+        }
+       ]
+      },
+      {
+       "label": "En faisant comme si de rien n’était",
+       "value": "lege",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle le dit l’air de rien, comme on demande l’heure. Il n’est pas dupe. Personne ne demande l’heure avec ces yeux-là."
+        }
+       ]
+      },
+      {
+       "label": "Avec un peu de stress, mais en entier",
+       "value": "stress",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Un peu de stress, la voix qui monte à la fin. Mais elle va jusqu’au bout de la phrase. C’est ça qui compte."
+        }
+       ]
+      }
+     ],
+     "key": "demande"
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Oui. Évidemment oui. … Par contre j’avais prévu de te le demander le 14. J’avais un plan."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Il était très bien, mon plan. Il avait juste deux semaines de retard."
+    },
+    {
+     "t": "sms",
+     "who": "leo",
+     "text": "note pour plus tard : quand j’ai un plan, le donner à Léonore. elle le fera plus vite"
+    },
+    {
+     "t": "item",
+     "id": "calendrier",
+     "text": "Un calendrier avec le 2 février entouré deux fois. Le 14, barré. Il rejoint ton inventaire."
+    },
+    {
+     "t": "memory",
+     "icon": "📅"
+    }
+   ],
+   "memory": {
+    "icon": "📅",
+    "title": "Elle avait deux semaines d’avance",
+    "text": "2 février 2026. C’est elle qui propose qu’ils se mettent ensemble. Lui avait prévu de le faire à la Saint-Valentin. Un vrai pas de sa part, et un plan beaucoup trop lent de la sienne."
+   }
+  },
+  {
+   "id": "chevet",
+   "title": "Tout est sur la table de nuit",
+   "icon": "🌙",
+   "teaser": "1 minute · rejouable",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "grosse journée ? ne réponds pas. viens juste voir la table de nuit"
+      }
+     ],
+     "later": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "grosse journée ? ne réponds pas. viens juste voir la table de nuit"
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. LA CHAMBRE — LE SOIR"
+    },
+    {
+     "t": "narr",
+     "text": "Les soirs où elle est épuisée, il prépare la table de nuit. Il ne demande rien. Il pose tout, et elle choisit."
+    },
+    {
+     "t": "recall",
+     "key": "soir",
+     "previous": true,
+     "texts": {
+      "serie": "(La dernière fois, c’était une série au lit. L’épisode est resté en pause au même endroit.)",
+      "eau": "(La dernière fois, juste un verre d’eau et le silence. Ça avait suffi.)",
+      "gateaux": "(La dernière fois, les petits gâteaux. Il en a racheté. Les mêmes.)",
+      "plaid": "(La dernière fois, le plaid. Il l’a laissé plié au même endroit.)",
+      "calins": "(La dernière fois, des câlins et des bisous. Il prend note : ça marche à tous les coups.)",
+      "mot": "(La dernière fois, le petit mot. Il est toujours là, sous le verre.)"
+     }
+    },
+    {
+     "t": "choice",
+     "prompt": "Ce soir, qu’est-ce qui te fait du bien ?",
+     "options": [
+      {
+       "label": "Une série au lit",
+       "value": "serie",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Une série au lit. Elle tient douze minutes. Il ne lance pas l’épisode suivant. Il attend demain, pour elle."
+        }
+       ]
+      },
+      {
+       "label": "Un verre d’eau, et c’est tout",
+       "value": "eau",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Un verre d’eau, posé à côté des lunettes. Il éteint la grande lumière. Il ne dit rien. C’est exactement ce qu’il fallait."
+        }
+       ]
+      },
+      {
+       "label": "Les petits gâteaux",
+       "value": "gateaux",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Les petits gâteaux, dans le lit. Il ne dit rien des miettes. Il les voit. Il ne dit rien."
+        }
+       ]
+      },
+      {
+       "label": "Le plaid",
+       "value": "plaid",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Le plaid, remonté jusqu’au menton. Il le borde un peu trop serré. Elle le laisse faire."
+        }
+       ]
+      },
+      {
+       "label": "Des câlins et des bisous",
+       "value": "calins",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Des câlins. Des bisous. Pas de discussion. Elle s’endort la tête sur son épaule, et il ne bouge plus jusqu’au matin."
+        }
+       ]
+      },
+      {
+       "label": "Un mot pour les soirs où ça tangue",
+       "value": "mot",
+       "then": [
+        {
+         "t": "letter",
+         "title": "Pour les soirs où ça tangue",
+         "text": "Je t’aime, Matecito. Tu m’apportes tellement de bonheur. On est deux dans cette histoire, et je serai là dans les hauts comme dans les bas. On prendra les vagues ensemble, le temps que la tempête se calme. Et s’il y a des petits morceaux à recoller, on les recollera ensemble.",
+         "sign": "Beaugossito",
+         "audio": "vocal-tempete"
+        }
+       ]
+      }
+     ],
+     "key": "soir",
+     "keep": "history"
+    },
+    {
+     "t": "narr",
+     "text": "Avant de dormir, il pense à lui retirer ses lunettes. Il les pose sur la table de nuit, branches pliées."
+    },
+    {
+     "t": "memory",
+     "icon": "🌙"
+    }
+   ],
+   "memory": {
+    "icon": "🌙",
+    "title": "Tout est sur la table de nuit",
+    "text": "Les soirs d’épuisement : une série au lit, un verre d’eau, des petits gâteaux, un plaid, des câlins et des bisous. Elle choisit, il a tout préparé. Et un mot, pour les soirs où ça tangue : on prendra les vagues ensemble."
+   },
+   "repeatable": true
+  },
+  {
+   "id": "carte",
+   "title": "Sans regarder la carte",
+   "icon": "☕",
+   "teaser": "1 à 2 minutes",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "je suis au café. j’ai commandé pour toi sans regarder la carte. pari : j’ai bon"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "Dans le frigo de {home}, la porte s’ouvre sur l’essentiel : des Ice Tea, des boîtes de raviolis, des tomates."
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. UN CAFÉ"
+    },
+    {
+     "t": "narr",
+     "text": "Il commande pour elle sans regarder la carte. Un café. Et si c’est l’après-midi, un Ice Tea."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Je ne prends aucun risque. Je connais le dossier."
+    },
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. LA CUISINE — UN SOIR SANS COURSES"
+    },
+    {
+     "t": "narr",
+     "text": "Un soir sans courses. Le frigo propose : une boîte de raviolis, une tomate."
+    },
+    {
+     "t": "choice",
+     "prompt": "Le dîner, ce sera :",
+     "options": [
+      {
+       "label": "Raviolis en conserve, et fiers de l’être",
+       "value": "raviolis",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Raviolis en conserve, réchauffés, servis dans de vraies assiettes. Ils trinquent avec de l’Ice Tea. C’est un dîner, ça compte."
+        }
+       ]
+      },
+      {
+       "label": "Une tomate crue, croquée comme une pomme",
+       "value": "tomate",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle croque la tomate crue comme une pomme. Il la regarde faire, un peu fasciné, un peu inquiet pour le jus."
+        }
+       ]
+      },
+      {
+       "label": "Les deux. Un vrai repas improvisé.",
+       "value": "deux",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Raviolis en conserve et tomate crue coupée en quatre, en accompagnement. Il appelle ça « un menu de saison ». Personne ne sait quelle saison."
+        }
+       ]
+      }
+     ],
+     "key": "diner"
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Gosiot mangera des raviolis froids à la fourchette directement dans la boîte. C’est génétique."
+    },
+    {
+     "t": "choice",
+     "prompt": "Et ce soir, on regarde ou on lit ?",
+     "options": [
+      {
+       "label": "Un Harry Potter",
+       "value": "hp",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Un Harry Potter. Lequel, ce n’est pas la question. La question, c’est combien de fois il va dire « attends, c’est qui lui ? »."
+        }
+       ]
+      },
+      {
+       "label": "Lire « Dune », chacun son coin du canapé",
+       "value": "dune",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle lit son livre, « Dune ». Il lit à côté, la page 4 depuis vingt minutes, parce qu’il la regarde lire."
+        }
+       ]
+      },
+      {
+       "label": "Un film du studio Ghibli",
+       "value": "ghibli",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Un Ghibli. Les dessins, la musique, le calme. À la fin, personne ne parle pendant une minute. C’est bon signe."
+        }
+       ]
+      }
+     ],
+     "key": "soiree"
+    },
+    {
+     "t": "item",
+     "id": "tasse",
+     "text": "Un mug pour le café du matin, et l’Ice Tea de l’après-midi. Il rejoint ton inventaire."
+    },
+    {
+     "t": "memory",
+     "icon": "☕"
+    }
+   ],
+   "memory": {
+    "icon": "☕",
+    "title": "Sans regarder la carte",
+    "text": "Du café, de l’Ice Tea, des raviolis en conserve, une tomate crue. Il n’a plus besoin de la carte. Et les soirs de canapé : Harry Potter, son livre « Dune », ou un Ghibli."
+   }
+  },
+  {
+   "id": "rosie",
+   "title": "La même adresse, deux anniversaires",
+   "icon": "🔖",
+   "teaser": "1 à 2 minutes",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "j’ai réservé quelque part. indice : on connaît déjà le chemin"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "Deux marque-pages dépassent du même livre, dans {home}. Ils portent la même adresse."
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "EXT. LE 6ᵉ, PRÈS DE MONTPARNASSE"
+    },
+    {
+     "t": "narr",
+     "text": "Le 6ᵉ, près de Montparnasse. Le cinéma, les sorties. C’est un des quartiers qui les ont rapprochés : ils y reviennent, et ils finissent toujours par marcher plus que prévu."
+    },
+    {
+     "t": "choice",
+     "prompt": "Dans le quartier, tu repenses d’abord à…",
+     "options": [
+      {
+       "label": "Une sortie au cinéma",
+       "value": "cine",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Une sortie au cinéma. Le film, on s’en souvient moins que du trajet d’après."
+        }
+       ]
+      },
+      {
+       "label": "Les rues, à pied, après",
+       "value": "rues",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Les rues, à pied, après. Le moment où personne ne veut rentrer le premier."
+        }
+       ]
+      }
+     ],
+     "key": "quartier"
+    },
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. ROSIE LOU — SON ANNIVERSAIRE"
+    },
+    {
+     "t": "narr",
+     "text": "Rosie Lou. C’est là qu’ils ont fêté l’anniversaire de Léonore."
+    },
+    {
+     "t": "memory",
+     "icon": "🔖",
+     "key": "a"
+    },
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. ROSIE LOU — L’ANNIVERSAIRE DE LÉO"
+    },
+    {
+     "t": "narr",
+     "text": "Et c’est là, ensuite, qu’ils ont fêté celui de Léo. Même adresse."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "On peut dire que c’est notre restaurant ? Ou c’est trop tôt pour avoir un restaurant ?"
+    },
+    {
+     "t": "choice",
+     "prompt": "Tu réponds :",
+     "options": [
+      {
+       "label": "« C’est notre restaurant. »",
+       "value": "notre",
+       "then": [
+        {
+         "t": "narr",
+         "text": "« C’est notre restaurant. » Il a l’air de quelqu’un à qui on vient de donner les clés d’une maison."
+        }
+       ]
+      },
+      {
+       "label": "« Deux anniversaires, ça fait une tradition. »",
+       "value": "tradition",
+       "then": [
+        {
+         "t": "narr",
+         "text": "« Deux anniversaires, ça fait une tradition. » Il note. Il a déjà une idée pour le troisième."
+        }
+       ]
+      }
+     ],
+     "key": "restaurant"
+    },
+    {
+     "t": "memory",
+     "icon": "🔖",
+     "key": "b"
+    },
+    {
+     "t": "item",
+     "id": "marquepage",
+     "text": "Deux marque-pages, une même adresse. Ils rejoignent ton inventaire."
+    }
+   ],
+   "memory": {
+    "icon": "🔖",
+    "title": "La même adresse, deux anniversaires",
+    "text": "Rosie Lou : son anniversaire à elle, puis le sien. Le 6ᵉ, près de Montparnasse, le cinéma et les sorties qui les ont rapprochés."
+   },
+   "memories": {
+    "a": {
+     "icon": "🔖",
+     "title": "Rosie Lou · l’anniversaire de Léonore",
+     "text": "Rosie Lou, pour l’anniversaire de Léonore. La première fois à cette adresse. Voir aussi : l’anniversaire de Léo, même adresse."
+    },
+    "b": {
+     "icon": "🔖",
+     "title": "Rosie Lou · l’anniversaire de Léo",
+     "text": "Rosie Lou, pour l’anniversaire de Léo. Même adresse que pour celui de Léonore : ça devient une tradition."
+    }
+   }
+  },
+  {
+   "id": "objets",
+   "title": "Les lunettes, les bottines et les briques",
+   "icon": "👓",
+   "teaser": "2 minutes",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "inventaire du jour : une paire de lunettes, des bottines, une figurine jaune, une carafe qui fait du bruit. viens voir"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "Un petit carton marqué « À NOUS », dans {home}. Dedans, quatre objets. Rien de précieux. Tout est précieux."
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. LA CHAMBRE — LE SOIR"
+    },
+    {
+     "t": "narr",
+     "text": "Les lunettes, d’abord. Le soir, il aime la regarder dans les yeux. Et ils pensent à les poser sur la table de nuit, pour qu’elle ne s’endorme pas avec."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Je les pose ou tu les poses ? On a un protocole."
+    },
+    {
+     "t": "item",
+     "id": "lunettes"
+    },
+    {
+     "t": "narr",
+     "text": "Les bottines marron, qu’elle porte souvent. Elles ont fait beaucoup de trottoirs, dont certains qu’ils ont faits ensemble."
+    },
+    {
+     "t": "item",
+     "id": "bottines"
+    },
+    {
+     "t": "narr",
+     "text": "La petite figurine Pikachu en briques. Ils l’ont construite ensemble, au début. Elle a une oreille un peu de travers. C’est la meilleure oreille."
+    },
+    {
+     "t": "item",
+     "id": "briques"
+    },
+    {
+     "t": "narr",
+     "text": "Et la carafe poisson. Quand on la redresse, elle fait glouglou."
+    },
+    {
+     "t": "sfx",
+     "name": "glouglou"
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Elle fait glouglou. Je ne m’en remets pas."
+    },
+    {
+     "t": "item",
+     "id": "carafe"
+    },
+    {
+     "t": "choice",
+     "prompt": "Tu exposes quoi en premier ?",
+     "options": [
+      {
+       "label": "La figurine, sur une étagère",
+       "value": "briques",
+       "then": [
+        {
+         "t": "narr",
+         "text": "La figurine, sur une étagère. Elle surveille la pièce, l’oreille de travers."
+        }
+       ]
+      },
+      {
+       "label": "La carafe, pour le glouglou",
+       "value": "carafe",
+       "then": [
+        {
+         "t": "narr",
+         "text": "La carafe, bien en vue. Glouglou. Encore. Glouglou."
+        }
+       ]
+      },
+      {
+       "label": "Les lunettes, sur la table de nuit",
+       "value": "lunettes",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Les lunettes, sur la table de nuit, branches pliées. Exactement là où elles doivent être à minuit."
+        }
+       ]
+      },
+      {
+       "label": "Les bottines, près de la porte",
+       "value": "bottines",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Les bottines près de la porte, prêtes pour la prochaine sortie."
+        }
+       ]
+      }
+     ],
+     "key": "expose"
+    },
+    {
+     "t": "narr",
+     "text": "Les quatre objets rejoignent ton inventaire. Avec 🎨 Décorer, la figurine peut aller sur une étagère, les lunettes sur une table de nuit, et la carafe fait glouglou quand tu la touches."
+    },
+    {
+     "t": "memory",
+     "icon": "👓"
+    }
+   ],
+   "memory": {
+    "icon": "👓",
+    "title": "Les lunettes, les bottines et les briques",
+    "text": "Ses lunettes, qu’ils posent sur la table de nuit pour qu’elle ne s’endorme pas avec, et ses yeux le soir. Ses bottines marron. La figurine Pikachu en briques construite ensemble au début. Et la carafe poisson qui fait glouglou."
+   }
+  },
+  {
+   "id": "affaires",
+   "title": "Les affaires classées de Mathys",
+   "icon": "📒",
+   "teaser": "1 à 2 minutes",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "mathys",
+       "text": "on m’a demandé de rouvrir deux dossiers. je rappelle que les faits sont prescrits"
+      }
+     ],
+     "later": [
+      {
+       "t": "sms",
+       "who": "mathys",
+       "text": "j’ai retrouvé deux vieux dossiers en déménageant mon cahier. je te les montre. tu ne commentes pas"
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "mathys"
+     ],
+     "room": 0,
+     "title": "INT. LE CAHIER D’INCIDENTS — ARCHIVES"
+    },
+    {
+     "t": "narr",
+     "text": "Le cahier d’incidents de Mathys. Section « Affaires classées ». Il tourne les pages avec une solennité de notaire."
+    },
+    {
+     "t": "say",
+     "who": "mathys",
+     "text": "Dossier un. L’airfryer."
+    },
+    {
+     "t": "narr",
+     "text": "Un poisson oublié une semaine dans l’airfryer. Les mouches sont venues. Puis d’autres bestioles. L’airfryer est désormais « condamné »."
+    },
+    {
+     "t": "incident",
+     "text": "Affaire classée : un poisson a passé une semaine dans l’airfryer. L’airfryer est « condamné ». Le poisson aussi, je suppose."
+    },
+    {
+     "t": "choice",
+     "prompt": "Ton commentaire :",
+     "options": [
+      {
+       "label": "« Une semaine, Mathys. »",
+       "value": "semaine",
+       "then": [
+        {
+         "t": "say",
+         "who": "mathys",
+         "text": "Six jours et demi. Je demande qu’on soit précis."
+        }
+       ]
+      },
+      {
+       "label": "« Paix à l’airfryer. »",
+       "value": "paix",
+       "then": [
+        {
+         "t": "say",
+         "who": "mathys",
+         "text": "Merci. Il avait une vie devant lui."
+        }
+       ]
+      },
+      {
+       "label": "Ne rien dire, juste le regarder",
+       "value": "regard",
+       "then": [
+        {
+         "t": "say",
+         "who": "mathys",
+         "text": "Je sens que tu commentes. Avec les yeux."
+        }
+       ]
+      }
+     ],
+     "key": "airfryer"
+    },
+    {
+     "t": "say",
+     "who": "mathys",
+     "text": "Dossier deux. Après une grosse soirée."
+    },
+    {
+     "t": "narr",
+     "text": "Le four est resté ouvert toute la nuit. Et les clés étaient du côté extérieur de la porte. Dehors. Sur la porte. Pour tout le monde."
+    },
+    {
+     "t": "incident",
+     "text": "Affaire classée : après une grosse soirée, le four est resté ouvert et les clés sur la porte, côté couloir. Personne n’est entré. C’est presque vexant."
+    },
+    {
+     "t": "choice",
+     "prompt": "Ton commentaire :",
+     "options": [
+      {
+       "label": "« Les clés DEHORS ? »",
+       "value": "dehors",
+       "then": [
+        {
+         "t": "say",
+         "who": "mathys",
+         "text": "Côté couloir. Il y a une nuance. Je ne sais pas laquelle."
+        }
+       ]
+      },
+      {
+       "label": "« On a tous eu des soirées. »",
+       "value": "soirees",
+       "then": [
+        {
+         "t": "say",
+         "who": "mathys",
+         "text": "Voilà. Merci. Toi, tu comprends le contexte."
+        }
+       ]
+      }
+     ],
+     "key": "four"
+    },
+    {
+     "t": "narr",
+     "text": "Il referme le cahier. Il a l’air presque fier. Les deux pages sont maintenant dans le cahier de Mathys, à relire quand tu veux dans Souvenirs."
+    },
+    {
+     "t": "memory",
+     "icon": "📒"
+    }
+   ],
+   "memory": {
+    "icon": "📒",
+    "title": "Les affaires classées de Mathys",
+    "text": "Un poisson oublié une semaine dans l’airfryer, des mouches, des bestioles, et un airfryer désormais « condamné ». Et une nuit après une grosse soirée : le four ouvert, les clés du côté extérieur de la porte."
+   }
+  },
+  {
+   "id": "hopital",
+   "title": "Le jour où tu étais là",
+   "icon": "🤍",
+   "teaser": "1 minute · scène calme",
+   "hook": [
+    {
+     "t": "narr",
+     "text": "Pas de surprise bruyante aujourd’hui. Juste un mot plié, posé à côté de toi."
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore"
+     ],
+     "room": 0,
+     "title": "UN MOT GARDÉ"
+    },
+    {
+     "t": "letter",
+     "title": "Un mot que je t’avais gardé",
+     "text": "Je t’avais gardé ce mot.\n\nQuand j’ai été hospitalisé pour cette infection, puis opéré, tu étais là. Tu as été gentille, juste, et drôle quand il le fallait. Tu savais quoi dire, et quand ne rien dire.\n\nJe n’étais pas à mon meilleur. Tu m’as aimé tel que j’étais à ce moment-là, et je ne l’oublierai pas.\n\nMerci.",
+     "sign": "Léo"
+    },
+    {
+     "t": "narr",
+     "text": "Il y a eu un kyste, une infection, l’hôpital, une opération sous anesthésie générale. Ça, c’est le dossier."
+    },
+    {
+     "t": "narr",
+     "text": "Ce dont il se souvient, lui, c’est d’elle. Sa gentillesse. Sa justesse. Son humour au bon moment. Et la façon dont elle l’a aimé tel qu’il était, ce jour-là."
+    },
+    {
+     "t": "choice",
+     "prompt": "Tu as envie de…",
+     "options": [
+      {
+       "label": "Garder le mot",
+       "value": "garder",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle plie le mot en deux. Il rejoint l’inventaire, et la boîte des choses qu’on ne jette pas."
+        }
+       ]
+      },
+      {
+       "label": "Lui écrire un mot en retour",
+       "value": "repondre",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle se dit qu’elle lui répondra. Sur le frigo, peut-être. Le bouton « Laisser un mot » est dans Proches, quand elle veut."
+        }
+       ]
+      },
+      {
+       "label": "Rester un moment avec",
+       "value": "rester",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle reste un moment avec. Il n’y a rien d’autre à faire, et c’est très bien."
+        }
+       ]
+      }
+     ],
+     "key": "merci"
+    },
+    {
+     "t": "item",
+     "id": "carte"
+    },
+    {
+     "t": "memory",
+     "icon": "🤍"
+    }
+   ],
+   "memory": {
+    "icon": "🤍",
+    "title": "Le jour où tu étais là",
+    "text": "L’hôpital, l’infection, l’opération. Et elle, à côté : gentille, juste, drôle au bon moment. Elle l’a aimé tel qu’il était ce jour-là. Il lui avait gardé un mot pour lui dire merci."
+   },
+   "ask": "Tu le lis maintenant ?"
+  },
+  {
+   "id": "smur",
+   "title": "Six semaines à Longjumeau",
+   "icon": "🚑",
+   "teaser": "2 minutes",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "six semaines de SMUR. j’ai des questions. beaucoup. tu as le temps ce soir ?"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "Dans un tiroir de {home}, un carnet de stage aux pages cornées : « SMUR de Longjumeau ». Ça date. Ça compte encore."
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "if",
+     "cond": {
+      "flag": "specialty"
+     },
+     "then": [
+      {
+       "t": "scene",
+       "home": "here",
+       "cast": [
+        "leonore",
+        "leo"
+       ],
+       "room": 0,
+       "title": "FLASHBACK — LE RETOUR DE LONGJUMEAU"
+      },
+      {
+       "t": "narr",
+       "text": "Avant tout le reste, avant la {specialty} : la 6ᵉ année de médecine, les concours de spécialité à préparer, et six semaines au SMUR de Longjumeau."
+      }
+     ],
+     "else": [
+      {
+       "t": "scene",
+       "home": "here",
+       "cast": [
+        "leonore",
+        "leo"
+       ],
+       "room": 0,
+       "title": "INT. LE RETOUR DE LONGJUMEAU"
+      },
+      {
+       "t": "narr",
+       "text": "6ᵉ année de médecine. Les concours de spécialité à préparer. Et elle revient de six semaines au SMUR de Longjumeau."
+      }
+     ]
+    },
+    {
+     "t": "narr",
+     "text": "Un stage mouvementé. Elle l’a aimé."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Raconte. Ce que tu veux. Je ne poserai pas de questions bêtes. Peut-être une ou deux."
+    },
+    {
+     "t": "choice",
+     "prompt": "Ce que tu as envie de raconter d’abord :",
+     "options": [
+      {
+       "label": "Les départs en intervention",
+       "value": "departs",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Les départs, l’adrénaline, la route. Il écoute sans l’interrompre. Il pose une seule question bête, à la fin. Elle y répond quand même."
+        }
+       ]
+      },
+      {
+       "label": "L’équipe",
+       "value": "equipe",
+       "then": [
+        {
+         "t": "narr",
+         "text": "L’équipe. Les gens avec qui on passe six semaines comme six mois. Il retient tous les prénoms, pour la prochaine fois."
+        }
+       ]
+      },
+      {
+       "label": "Ce que ça m’a appris sur moi",
+       "value": "moi",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Ce que ça lui a appris sur elle. Il écoute. Il trouve qu’elle se décrit beaucoup moins bien que ce qu’il voit."
+        }
+       ]
+      },
+      {
+       "label": "Je te raconterai plus tard",
+       "value": "plustard",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle lui racontera plus tard. Il dit « d’accord ». Il le pense."
+        }
+       ]
+      }
+     ],
+     "key": "smur"
+    },
+    {
+     "t": "if",
+     "cond": {
+      "flag": "specialty"
+     },
+     "then": [
+      {
+       "t": "narr",
+       "text": "Elle a choisi la {specialty}, plus tard, dans cette vie-là. Le SMUR est resté un souvenir, de ceux qu’on raconte encore."
+      }
+     ],
+     "else": [
+      {
+       "t": "narr",
+       "text": "Après, il y a les concours. Et le choix. Elle hésite encore entre plusieurs voies."
+      },
+      {
+       "t": "choice",
+       "prompt": "Aujourd’hui, tu en es où ?",
+       "options": [
+        {
+         "label": "J’hésite encore, et c’est normal",
+         "value": "hesite",
+         "then": [
+          {
+           "t": "say",
+           "who": "leo",
+           "text": "C’est normal. Tu as le droit de ne pas savoir. Tu as même le droit de changer d’avis trois fois. Je tiendrai le compte."
+          }
+         ]
+        },
+        {
+         "label": "Le SMUR m’a donné des idées",
+         "value": "idees",
+         "then": [
+          {
+           "t": "say",
+           "who": "leo",
+           "text": "Note-les quelque part. Ou dis-les-moi. Je suis un très bon carnet."
+          }
+         ]
+        },
+        {
+         "label": "Je ne veux pas en parler ce soir",
+         "value": "pasce",
+         "then": [
+          {
+           "t": "say",
+           "who": "leo",
+           "text": "Alors on n’en parle pas. On parle de Gosiot. Il veut être médecin, apparemment. Ou dinosaure."
+          }
+         ]
+        }
+       ],
+       "key": "voie"
+      }
+     ]
+    },
+    {
+     "t": "item",
+     "id": "carnet",
+     "text": "Le carnet de stage rejoint ton inventaire."
+    },
+    {
+     "t": "memory",
+     "icon": "🚑"
+    }
+   ],
+   "memory": {
+    "icon": "🚑",
+    "title": "Six semaines à Longjumeau",
+    "text": "6ᵉ année de médecine, les concours de spécialité à préparer, plusieurs voies possibles. Et six semaines au SMUR de Longjumeau : un stage mouvementé, qu’elle a aimé."
+   }
+  },
+  {
+   "id": "retrouver",
+   "title": "On se retrouvera",
+   "icon": "🗝️",
+   "teaser": "2 minutes",
+   "hook": [
+    {
+     "t": "stage",
+     "early": [
+      {
+       "t": "sms",
+       "who": "leo",
+       "text": "j’ai fait un dessin. c’est un plan. c’est pas à l’échelle. c’est pas un appart. c’est une idée"
+      }
+     ],
+     "later": [
+      {
+       "t": "narr",
+       "text": "Sur le mur de {home}, un crochet vide. Il attend quelque chose. Une clé, peut-être."
+      }
+     ]
+    }
+   ],
+   "steps": [
+    {
+     "t": "scene",
+     "home": "here",
+     "cast": [
+      "leonore",
+      "leo"
+     ],
+     "room": 0,
+     "title": "INT. UN SOIR, SANS RIEN DE SPÉCIAL"
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Je voulais te dire un truc. Pas un plan à la Saint-Valentin, promis. Un vrai."
+    },
+    {
+     "t": "narr",
+     "text": "Il aimerait qu’ils emménagent ensemble. Dans environ deux ans. Après ses concours, après son choix de spécialité. Pas avant : elle a assez à faire."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Et si ce que tu choisis t’emmène loin de Paris, je veux que tu choisisses ce dont tu rêves. Pas ce qui m’arrange. Je te soutiendrai."
+    },
+    {
+     "t": "choice",
+     "prompt": "Tu as envie de répondre…",
+     "options": [
+      {
+       "label": "« Deux ans, c’est un bon plan. »",
+       "value": "deuxans",
+       "then": [
+        {
+         "t": "say",
+         "who": "leo",
+         "text": "Merci. C’est le premier de mes plans qui n’a pas de retard."
+        }
+       ]
+      },
+      {
+       "label": "« Et si c’est loin ? »",
+       "value": "loin",
+       "then": [
+        {
+         "t": "say",
+         "who": "leo",
+         "text": "Alors on fera avec la distance. On l’a déjà fait, entre le Kremlin-Bicêtre et la rue des Ardennes. Ça s’est bien passé."
+        }
+       ]
+      },
+      {
+       "label": "Le prendre dans tes bras",
+       "value": "bras",
+       "then": [
+        {
+         "t": "narr",
+         "text": "Elle le prend dans ses bras. Ça répond à tout."
+        }
+       ]
+      },
+      {
+       "label": "« Gosiot aura sa chambre ? »",
+       "value": "gosiot",
+       "then": [
+        {
+         "t": "say",
+         "who": "leo",
+         "text": "Gosiot aura une chambre, un teckel, et un avis sur tout. Comme ses parents."
+        }
+       ]
+      }
+     ],
+     "key": "promesse"
+    },
+    {
+     "t": "narr",
+     "text": "Le plan dessiné sur une feuille n’est pas à l’échelle. Il y a deux bureaux, un canapé, une place pour la carafe qui fait glouglou. Et une flèche, au bas de la page : « ici, on se retrouve »."
+    },
+    {
+     "t": "item",
+     "id": "plan"
+    },
+    {
+     "t": "item",
+     "id": "cle",
+     "text": "Une clé sur un crochet. Elle n’ouvre encore rien. Pas encore."
+    },
+    {
+     "t": "say",
+     "who": "leo",
+     "text": "Peu importe où, peu importe quand. On se retrouvera."
+    },
+    {
+     "t": "sms",
+     "who": "leo",
+     "text": "six seven. (je sais même pas si je l’utilise bien. c’est toi qui me l’as appris, donc c’est ta faute)"
+    },
+    {
+     "t": "memory",
+     "icon": "🗝️"
+    }
+   ],
+   "memory": {
+    "icon": "🗝️",
+    "title": "On se retrouvera",
+    "text": "Emménager ensemble dans environ deux ans, après les concours et le choix de spécialité. Et si son projet l’emmène loin de Paris, qu’elle choisisse ce dont elle rêve : il la soutiendra. Une clé, un plan à deux, et la certitude de se retrouver."
+   }
+  }
+ ]
+};
+/* </contenu> */
+
 /* ===== pack.js ===== */
 /* =====================================================================
-   PAQUET DE SOUVENIRS PRIVÉ — src/pack.js
-   Le dépôt est public : les histoires personnelles ne vivent PAS ici.
-   Elles arrivent dans un fichier JSON choisi par la joueuse (format
-   « milife.pack », voir tests/fixtures/paquet-fictif.json), gardé dans le
-   stockage local du navigateur, séparément de la partie. La progression est
-   rangée dans la partie par identifiants d'épisode stables : réinstaller le
-   même paquet, ou une version enrichie, conserve ce qui a été lu et obtenu.
+   PAQUET DE SOUVENIRS — src/pack.js
+   Par défaut : le contenu intégré (CONTENU_INTEGRE). On peut installer un
+   paquet JSON (format « milife.pack ») : une version plus récente du même
+   paquet, ou un autre paquet. La progression est rangée dans la partie par
+   identifiants d'épisode stables : changer de version conserve ce qui a été
+   lu et obtenu. Un paquet stocké plus ancien que l'intégré est ignoré.
    ===================================================================== */
 const Pack = (() => {
   const KEY = 'milife.pack.v1', SCHEMA = 1;
@@ -3815,9 +5847,11 @@ const Pack = (() => {
     if (p.items && !isObj(p.items)) return { ok: false, error: 'Liste d’objets illisible.' };
     return { ok: true, warnings };
   }
+  const BUNDLED = typeof CONTENU_INTEGRE !== 'undefined' && !(typeof window !== 'undefined' && window.MILIFE_NO_BUNDLE) && validate(CONTENU_INTEGRE).ok ? CONTENU_INTEGRE : null;
   function load() {
     try { const raw = localStorage.getItem(KEY); if (raw) { const p = JSON.parse(raw); if (validate(p).ok) cur = p; } }
     catch (e) { lastError = e; }
+    if (BUNDLED && (!cur || (cur.id === BUNDLED.id && cur.version < BUNDLED.version))) cur = BUNDLED;
     return cur;
   }
   function parse(text) {
@@ -3831,13 +5865,13 @@ const Pack = (() => {
     try { localStorage.setItem(KEY, JSON.stringify(p)); memOnly = false; } catch (e) { lastError = e; memOnly = true; }
     cur = p; return { memOnly };
   }
-  function remove() { cur = null; memOnly = false; try { localStorage.removeItem(KEY); } catch (e) { lastError = e; } }
+  function remove() { cur = BUNDLED; memOnly = false; try { localStorage.removeItem(KEY); } catch (e) { lastError = e; } }
   const get = () => cur;
   const episodes = () => (cur ? cur.episodes.slice() : []);
   const episode = id => (cur ? cur.episodes.find(e => e.id === id) : null);
   const item = id => (cur && cur.items && cur.items[id]) || null;
   const media = id => (cur && cur.media && cur.media[id]) || null;
-  return { KEY, SCHEMA, validate, load, parse, install, remove, get, episodes, episode, item, media, get memOnly() { return memOnly; }, get lastError() { return lastError; } };
+  return { KEY, SCHEMA, validate, load, parse, install, remove, get, episodes, episode, item, media, get bundled() { return BUNDLED; }, get isBundled() { return !!cur && cur === BUNDLED; }, get memOnly() { return memOnly; }, get lastError() { return lastError; } };
 })();
 Pack.load();
 
@@ -3986,7 +6020,7 @@ async function runStep(s, ctx) {
     }
     case 'motus': { const r = await Mini.motus({ word: s.word, cap: esc(T(s.caption || '')) }); if (s.after) await narr(T(s.after)); return r; }
     case 'tap': return tapMoment(s);
-    case 'letter': return showLetter(T(s.title || ''), T(s.text), s.audio ? Pack.media(s.audio) : null, T(s.sign || ''));
+    case 'letter': return showLetter(nick(T(s.title || '')), nick(T(s.text)), s.audio ? Pack.media(s.audio) : null, nick(T(s.sign || '')));
     case 'photo': { const m = Pack.media(s.media); if (m) return showLetter(T(s.caption || ''), '', null, '', m); return; }
     case 'item': {
       if (!ctx.st.items[s.id] || !has(s.id)) { giveItem(s.id, 'leonore'); ctx.st.items[s.id] = todayKey(); Save.write(S, 'ep:item'); toast(`🎁 ${itemName(s.id)} rejoint ton inventaire · à placer avec 🎨 Décorer`); sfx('love'); }
@@ -4057,15 +6091,15 @@ function showPack(back) {
   const ov = $('#overlay'); ov.className = 'show title'; const P = Pack.get(); let found = null;
   const done = P && S ? P.episodes.filter(e => (S.daily.ep[e.id] || {}).read).length : 0;
   ov.innerHTML = `<div class="titleBox set"><h2>Mes souvenirs</h2>
-    ${P ? `<div class="prev"><b>Installé : « ${esc(P.title)} » · version ${P.version}</b><small>${P.episodes.length} épisodes${S ? ` · ${done} déjà lu${done > 1 ? 's' : ''}` : ''}${Pack.memOnly ? ' · ⚠️ trop lourd pour rester installé : à réinstaller à la prochaine ouverture' : ''}</small></div>`
+    ${P ? `<div class="prev"><b>${Pack.isBundled ? 'Intégrés au jeu' : 'Installé'} : « ${esc(P.title)} » · version ${P.version}</b><small>${P.episodes.length} épisodes${S ? ` · ${done} déjà lu${done > 1 ? 's' : ''}` : ''}${Pack.memOnly ? ' · ⚠️ trop lourd pour rester installé : à réinstaller à la prochaine ouverture' : ''}</small></div>`
         : '<p>Le paquet de souvenirs est un fichier à part, qui reste sur cet appareil. Le jeu marche très bien sans lui ; avec lui, une surprise t’attend chaque jour.</p>'}
     <label class="ghost filebtn">📂 ${P ? 'Installer une nouvelle version' : 'Choisir le fichier de souvenirs'}<input type="file" id="pFile" hidden></label>
     <p class="msg" id="pMsg" role="alert"></p><div id="pPrev"></div>
-    ${P ? '<button class="ghost" id="pDel">Retirer le paquet de cet appareil</button>' : ''}
+    ${P && !Pack.isBundled ? `<button class="ghost" id="pDel">${Pack.bundled ? 'Revenir aux souvenirs intégrés' : 'Retirer le paquet de cet appareil'}</button>` : ''}
     <button class="ghost" id="pBack">Retour</button></div>`;
   const msg = (t, ok) => { $('#pMsg').textContent = t || ''; $('#pMsg').classList.toggle('ok', !!ok); };
   $('#pBack').onclick = back;
-  if (P) $('#pDel').onclick = () => { if (!$('#pDel').dataset.sure) { $('#pDel').dataset.sure = 1; $('#pDel').textContent = 'Retirer ? Ta progression reste dans la partie.'; return; } Pack.remove(); toast('Paquet retiré. Ta progression est gardée.'); if (S) render(); showPack(back); };
+  if (P && !Pack.isBundled) $('#pDel').onclick = () => { if (!$('#pDel').dataset.sure) { $('#pDel').dataset.sure = 1; $('#pDel').textContent = 'Retirer ? Ta progression reste dans la partie.'; return; } Pack.remove(); toast('Paquet retiré. Ta progression est gardée.'); if (S) render(); showPack(back); };
   $('#pFile').onchange = e => {
     const f = e.target.files[0]; if (!f) return; const r = new FileReader();
     r.onerror = () => msg('Impossible de lire ce fichier.');

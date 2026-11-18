@@ -1,13 +1,10 @@
-/* Joue un paquet de souvenirs RÉEL de bout en bout, sans jamais le copier dans le dépôt.
-   Usage : MILIFE_PACK=/chemin/hors-depot/paquet.json node tests/test-pack-prive.js
-   Sans MILIFE_PACK, la suite est ignorée. N'affiche aucun texte du paquet (titres exceptés). */
+/* Les 14 épisodes intégrés « Les petites choses », joués de bout en bout sans rien installer :
+   partie neuve et partie avancée (fictive), un par jour réel, objets, souvenirs, reprise des post-its. */
 const fs = require('fs'), path = require('path');
 const { ROOT, serve, advance, launch, check, summary } = require('./lib');
-const PACK = process.env.MILIFE_PACK;
-if (!PACK || !fs.existsSync(PACK)) { console.log('MILIFE_PACK absent : suite ignorée.'); process.exit(0); }
-if (path.resolve(PACK).startsWith(ROOT + path.sep)) { console.log('⚠️ Le paquet privé est dans le dépôt : déplace-le hors de ' + ROOT); process.exit(1); }
 const ADV = fs.readFileSync(path.join(__dirname, 'fixtures', 'save-v1-avancee-fictive.txt'), 'utf8').trim();
-const pack = JSON.parse(fs.readFileSync(PACK, 'utf8'));
+const src = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const pack = JSON.parse(src.slice(src.indexOf('const CONTENU_INTEGRE = ') + 24, src.indexOf(';\n/* </contenu> */')).replace(/<\\\//g, '</'));
 const st = page => page.evaluate(() => window.MiLife.state);
 const fast = page => page.evaluate(() => { window.MiLife.Mini.fast = true; window.MiLife.UI.fastText = true; });
 async function reload(page) { await page.reload(); await page.waitForSelector('#tCont'); await fast(page); await page.click('#tCont'); await advance(page); await page.waitForTimeout(50); }
@@ -47,16 +44,14 @@ async function playAll(page, label, pickFn) {
     await ctx.clock.install({ time: day(0) });
     const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
     await page.goto('http://127.0.0.1:8831/'); await page.waitForSelector('#tPack'); await fast(page);
-    await page.click('#tPack'); await page.setInputFiles('#pFile', PACK); await page.waitForSelector('#pGo');
-    const warn = await page.textContent('#pPrev'); await page.click('#pGo'); await page.click('#pBack');
-    check(/14 épisodes/.test(warn), 'paquet valide, 14 épisodes');
+    check(await page.evaluate(() => window.MiLife.Pack.isBundled && window.MiLife.Pack.get().episodes.length === 14), 'contenu intégré présent sans rien installer (14 épisodes)');
     await setup(page);
     const s0 = await st(page); const mots0 = s0.counters.mots || 0;
     const r = await playAll(page, label, pick);
     const s = await st(page);
     check(r.seen.join() === pack.episodes.map(e => e.id).join(), 'les 14 épisodes, un par jour, dans l’ordre');
     check(pack.episodes.every(e => (s.daily.ep[e.id] || {}).read), 'tous marqués lus');
-    const storyItems = [...new Set(JSON.stringify(pack.episodes).match(/"t": ?"item", ?"id": ?"(\w+)"/g).map(x => x.match(/"id": ?"(\w+)"/)[1]))];
+    const storyItems = []; (function walk(o) { if (Array.isArray(o)) o.forEach(walk); else if (o && typeof o === 'object') { if (o.t === 'item' && !storyItems.includes(o.id)) storyItems.push(o.id); Object.values(o).forEach(walk); } })(pack.episodes);
     check(storyItems.every(id => s.items.filter(i => i.id === id).length === 1), `objets d’histoire obtenus une seule fois (${storyItems.length})`);
     check(s.memories.filter(m => m.ref).length === pack.episodes.length + 1, 'un souvenir par épisode (un épisode en a deux)');
     check(!r.bad.length, 'aucun texte avec gabarit non résolu ' + r.bad.join(' | '));
@@ -65,6 +60,24 @@ async function playAll(page, label, pickFn) {
     check(pack.episodes.every(e => alb.includes(e.title.replace(/ /g, ' ')) || alb.includes(e.title)), 'tous les épisodes relisibles dans Souvenirs');
     check(!errors.length, 'aucune erreur JS ' + errors.join(' | '));
     await ctx.close();
+  }
+  console.log('— paquet v1 déjà importé à la main (même identifiants) : rien en double');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } }); await ctx.clock.install({ time: day(0) });
+    const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
+    await page.goto('http://127.0.0.1:8831/'); await page.waitForSelector('#tNew'); await fast(page);
+    await page.evaluate(p => { const v1 = JSON.parse(JSON.stringify(p)); v1.version = 1; localStorage.setItem('milife.pack.v1', JSON.stringify(v1)); }, pack);
+    await page.reload(); await page.waitForSelector('#tNew'); await fast(page);
+    check(await page.evaluate(() => window.MiLife.Pack.isBundled), 'un paquet stocké plus ancien est remplacé par le contenu intégré');
+    await page.click('#tNew'); await advance(page);
+    await page.evaluate(() => { const S = window.MiLife.state; for (const id of ['voisine', 'pinte']) { if (!S.daily.unlocked.some(u => u.id === 'ep:' + id)) S.daily.unlocked.push({ id: 'ep:' + id, day: '2026-11-30', kind: 'ep' }); S.daily.ep[id] = { read: true, answers: {}, items: id === 'pinte' ? { sousbock: '2026-11-30' } : {}, plays: 1 }; S.memories.push({ day: 1, icon: '🍺', ref: 'pack:' + id, title: '', text: '' }); } S.items.push({ id: 'sousbock', owner: 'leonore', day: 1, stored: true }); S.daily.lastDay = '2026-11-30'; window.MiLife.Save.write(S, 't'); });
+    await page.clock.setSystemTime(day(1)); await reload(page);
+    let s = await st(page);
+    check(s.daily.unlocked[s.daily.unlocked.length - 1].id === 'ep:cuvette', 'la série reprend au premier épisode non lu');
+    await page.evaluate(() => { window.MiLife.UI.tab = 'album'; window.MiLife.render(); }); await page.click('[data-replay="pinte"]'); await advance(page);
+    s = await st(page);
+    check(s.items.filter(i => i.id === 'sousbock').length === 1 && s.memories.filter(m => m.ref === 'pack:pinte').length === 1, 'objet et souvenir déjà acquis : pas de doublon');
+    check(!errors.length, 'aucune erreur JS ' + errors.join(' | ')); await ctx.close();
   }
   await browser.close(); srv.close();
   process.exit(summary() ? 1 : 0);

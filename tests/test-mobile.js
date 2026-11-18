@@ -53,6 +53,33 @@ async function parcours(page, label) {
     check(/Le parapluie fictif/.test(await page.textContent('#panel')), 'hors ligne : paquet réinstallé indépendamment de la partie');
     check(!errors.length, 'aucune erreur JS ' + errors.join(' | ')); await ctx.close();
   }
+  {
+    const ctx = await browser.newContext({ ...devices['iPhone 13'] }); await ctx.clock.install({ time: new Date('2026-11-18T09:00:00') });
+    const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
+    await page.goto('http://127.0.0.1:8841/');
+    console.log('iPhone 13 : contenu intégré, sans rien installer');
+    await page.waitForSelector('#tImp'); await fast(page);
+    await page.tap('#tImp'); await page.fill('#iCode', OLD); await page.tap('#iCheck'); await page.tap('#iGo'); await advance(page);
+    const again = async d => { await page.clock.setSystemTime(new Date(d)); await page.reload(); await page.waitForSelector('#tCont'); await fast(page); await page.tap('#tCont'); await advance(page); await page.waitForTimeout(50); await page.evaluate(() => { window.MiLife.UI.tab = 'day'; window.MiLife.render(); }); };
+    await page.evaluate(() => { window.MiLife.UI.tab = 'day'; window.MiLife.render(); });
+    if (await page.isVisible('[data-readnote="auto"]')) { await page.tap('[data-readnote="auto"]'); await advance(page); }
+    await again('2026-11-19T09:00:00');
+    check(/voisine/.test(await page.evaluate(() => window.MiLife.state.daily.unlocked.map(u => u.id).join())), 'épisode 1 intégré débloqué le lendemain');
+    await page.tap('[data-surprise="1"]'); await advance(page);
+    await again('2026-11-20T09:00:00'); await page.tap('[data-surprise="1"]'); await advance(page);
+    let s = await st(page);
+    check(s.items.some(i => i.id === 'sousbock' && i.stored), 'épisode 2 : le sous-bock arrive dans l’inventaire');
+    await page.tap('#decoBtn'); await page.tap('.chips [data-room="1"]'); await page.tap('[data-dpick="sousbock"]');
+    const b = await page.locator('#scene').boundingBox(); await page.touchscreen.tap(b.x + b.width * 181 / 360, b.y + b.height * 165 / 300);
+    await page.tap('[data-ddone="1"]');
+    await page.reload(); await page.waitForSelector('#tCont'); await fast(page); await page.tap('#tCont'); await advance(page);
+    s = await st(page); const it = s.items.find(i => i.id === 'sousbock');
+    check(it.x === 181 && it.room === 1 && !it.stored, 'sous-bock posé sur le chevet, toujours là après rechargement');
+    check(s.daily.ep.voisine.read && s.daily.ep.pinte.read && s.memories.some(m => m.ref === 'pack:pinte'), 'progression et souvenirs conservés');
+    await page.evaluate(() => { window.MiLife.UI.tab = 'album'; window.MiLife.render(); });
+    check(/Une pinte à 15/.test(await page.textContent('#panel')), 'souvenir relisible dans Souvenirs');
+    check(!errors.length, 'aucune erreur JS ' + errors.join(' | ')); await ctx.close();
+  }
   await browser.close(); srv.close();
   process.exit(summary() ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

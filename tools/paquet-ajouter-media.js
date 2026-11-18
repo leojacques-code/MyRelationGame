@@ -3,7 +3,8 @@
    Le média est intégré dans le JSON (data URI) : le paquet reste un seul fichier, lisible hors ligne.
    Usage : node tools/paquet-ajouter-media.js <paquet.json> <identifiant> <fichier> [sortie.json]
    Exemple : node tools/paquet-ajouter-media.js ~/prive/paquet-v1.json vocal-tempete ~/prive/vocal.m4a
-   Le fichier de sortie (par défaut : même nom, version +1) doit être HORS du dépôt Git. */
+   Le fichier de sortie (par défaut : même nom, version +1) est à installer via 📦 dans le jeu.
+   Un vrai vocal reste hors du dépôt (fichiers audio ignorés par .gitignore). */
 const fs = require('fs'), path = require('path');
 const [, , packPath, id, mediaPath, outArg] = process.argv;
 if (!packPath || !id || !mediaPath) { console.error('Usage : node tools/paquet-ajouter-media.js <paquet.json> <identifiant> <fichier> [sortie.json]'); process.exit(1); }

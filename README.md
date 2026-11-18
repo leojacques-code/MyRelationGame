@@ -15,12 +15,16 @@ Un jeu de vie à deux, dans un seul fichier `index.html`. Il marche en ligne et 
   Autre adresse, Preview, autre appareil, fichier HTML ouvert localement ou icône « écran d’accueil »
   d’iPhone (qui a son propre stockage) : passer par le code.
 
-## Paquet de souvenirs (contenu privé)
+## Les petites choses (épisodes intégrés)
 
-Le dépôt est public. Les histoires personnelles n’y sont **pas** : elles arrivent dans un fichier JSON
-choisi par la joueuse (**écran titre › 📦 Installer mes souvenirs**, ou Souvenirs › 📦), gardé dans le
-navigateur séparément de la partie. La progression est rangée dans la partie par identifiants
-d’épisode : réinstaller le même paquet ou une version enrichie conserve ce qui a été lu et obtenu.
+Les 14 épisodes « Les petites choses » sont **intégrés au jeu** (bloc `CONTENU_INTEGRE` de
+`index.html`), en ligne comme hors ligne, sans rien installer. Leur source est
+`tools/generer-contenu.py` : après une modification, `python3 tools/generer-contenu.py` met à jour le
+bloc (penser à incrémenter `version`). La progression est rangée dans la partie par identifiants
+d’épisode et d’objet : une nouvelle version, ou un paquet identique importé avant, ne crée aucun doublon.
+
+On peut aussi installer un paquet JSON à la main (**écran titre › 📦**, ou Souvenirs › 📦) : une version
+plus récente, ou un autre paquet. « Revenir aux souvenirs intégrés » annule ce choix.
 
 Exemple complet et fictif : `tests/fixtures/paquet-fictif.json`. Format :
 
@@ -40,7 +44,7 @@ jamais bloquante), `motus` (mot du jour fixe), `tap`, `letter` (avec `audio` fac
 `item` (objet d’histoire, une seule fois), `memory`, `love`, `incident`, `sfx`. Gabarits :
 `{nickL}`, `{nickO}`, `{home}`, `{specialty}`, `{answer:clé}`.
 
-Ajouter un vocal ou une photo (le fichier produit doit rester hors du dépôt) :
+Ajouter un vocal ou une photo à un paquet installable à la main :
 
 ```bash
 node tools/paquet-ajouter-media.js /chemin/prive/paquet.json vocal-tempete /chemin/prive/vocal.m4a
@@ -62,8 +66,5 @@ tests sont fictives ; les fixtures de sauvegarde ont été produites par l’anc
 node tests/run-all.js
 ```
 
-Pour jouer aussi un paquet réel de bout en bout, sans le copier dans le dépôt :
-
-```bash
-MILIFE_PACK=/chemin/prive/paquet.json node tests/test-pack-prive.js
-```
+Le drapeau `window.MILIFE_NO_BUNDLE = true` (posé avant le chargement) désactive le contenu intégré :
+les tests de la mécanique des surprises s’en servent.

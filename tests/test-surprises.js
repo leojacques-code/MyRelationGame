@@ -1,4 +1,4 @@
-/* Étape 2 — une surprise par jour réel, simulation de dates, paquet fictif. Aucune donnée réelle. */
+/* Étape 2 — mécanique des surprises (contenu intégré désactivé), simulation de dates, paquet fictif. */
 const fs = require('fs'), path = require('path');
 const { ROOT, serve, advance, launch, check, summary } = require('./lib');
 const HTML = path.join(ROOT, 'index.html');
@@ -19,6 +19,7 @@ const unlocked = s => s.daily.unlocked.map(u => u.id).join(',');
   const srv = await serve(8821, HTML); const browser = await launch();
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
   await ctx.clock.install({ time: at('2026-11-18T10:00:00') });
+  await ctx.addInitScript(() => { window.MILIFE_NO_BUNDLE = true; });   // ici on teste la mécanique sans le contenu intégré
   const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('http://127.0.0.1:8821/'); await page.waitForSelector('#overlay.title'); await fast(page);
 
@@ -113,7 +114,7 @@ const unlocked = s => s.daily.unlocked.map(u => u.id).join(',');
 
   console.log('Ancienne partie avancée : la même suite, depuis le présent');
   const c2 = await browser.newContext({ viewport: { width: 390, height: 844 } });
-  await c2.clock.install({ time: at('2026-11-18T10:00:00') });
+  await c2.clock.install({ time: at('2026-11-18T10:00:00') }); await c2.addInitScript(() => { window.MILIFE_NO_BUNDLE = true; });
   const p2 = await c2.newPage(); const err2 = []; p2.on('pageerror', e => err2.push(e.message));
   await p2.goto('http://127.0.0.1:8821/'); await p2.waitForSelector('#tImp'); await fast(p2);
   await p2.click('#tPack'); await p2.setInputFiles('#pFile', PACK); await p2.click('#pGo'); await p2.click('#pBack');
